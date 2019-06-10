@@ -11,7 +11,6 @@
 
 #include <Arduino.h>
 #include "board.h"
-#include "Device_Configuration.h"
 #include "Error.h"
 #include "Structs.h"
 
@@ -21,7 +20,7 @@ class SpcProcessing
 	//variables
 	public:
 	bool IsInSimulationMode = false;
-	bool newData = false;
+	bool HasNewData = false;
 	bool HasError(void);
 	bool ISR_READY(void);
 	
@@ -50,9 +49,6 @@ class SpcProcessing
 	void StopQuery(void);
 	bool QueryFailed(void);
 	int GetLoopCounts(void);
-	void MainLoop(void);
-	
-	
 	
 	
 	protected:

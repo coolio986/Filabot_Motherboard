@@ -371,9 +371,6 @@
     <Compile Include="DataConversions.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="Device_Configuration.h">
-      <SubType>compile</SubType>
-    </Compile>
     <Compile Include="Error.cpp">
       <SubType>compile</SubType>
     </Compile>
@@ -921,9 +918,6 @@
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="include\WString.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="Queue.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="Screen.cpp">

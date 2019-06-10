@@ -5,7 +5,7 @@
 #include "board.h"
 #include "hardwareTypes.h"
 #include "Structs.h"
-#include "Device_Configuration.h"
+
 
 const byte numChars = 32;
 static char receivedChars[numChars]; // an array to store the received data

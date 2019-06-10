@@ -55,56 +55,24 @@ void SpcProcessing::init(void)
 void ISR_SPC()
 {
 	
-	
-	//rawSPC_ISR[ISR_LOOP_COUNTER++] = (PINA & digitalPinToBitMask(INDICATOR_DAT)) == 0 ? 48 : 49; //Keep track of ISR bits
 	rawSPC_ISR[ISR_LOOP_COUNTER++] = digitalRead(INDICATOR_DAT) == 0 ? 48 : 49;
-	//rawSPC_ISR[ISR_LOOP_COUNTER++] = PIOD->PIO_PDSR & PIO_PDSR_P3 == 0 ? 48 : 49;
 	
-
-	if (ISR_LOOP_COUNTER >= 52)
+	if (ISR_LOOP_COUNTER >= 52) //there can only be 52 bits to the spc data
 	{
-		detachInterrupt(digitalPinToInterrupt(INDICATOR_CLK));
+		detachInterrupt(digitalPinToInterrupt(INDICATOR_CLK)); //dump the interrupt to stop anymore triggering
 		digitalWrite(INDICATOR_REQ, LOW);
 		
-		
-		//ISR_LOOP_COUNTER = 0; //set loop counter back to 0
 		for (int i = 0; i < 52; i++)
 		{
-			rawSPC[i] = rawSPC_ISR[i]; //copy voltaile memory to non-volatile and clear the volatile to syncronize the main program loop
+			rawSPC[i] = rawSPC_ISR[i]; //copy volatile memory to non-volatile and clear the volatile to synchronize the main program loop
 			rawSPC_ISR[i] = 0;
 		}
 		
-		SPC_ISR_LOCK = false; //unlock ISR to synchronize main program loop
-		
+		SPC_ISR_LOCK = false; //unlock ISR to synchronize spc data loop
 	}
-	
-	
 }
 
-void SpcProcessing::MainLoop(void)
-{
-	//if ((MAIN_LOOP_COUNTER > ISR_LOOP_COUNTER + 100)){ //track the loops to see if the ISR is still firing. Sometimes it doesn't trigger properly due to the screen updates
-	
-	
-	//eError.hardwareType = INDICATOR;
-	//
-	//eError.errorLevel = 2;
-	//eError.errorCode = 1;
-	//AddError(&eError);
 
-	//ISR_LOOP_COUNTER = 0;
-	//MAIN_LOOP_COUNTER = 0;
-	//SPC_ISR_LOCK = false;
-	
-	//digitalWrite(INDICATOR_REQ, LOW);
-	//digitalWrite(INDICATOR_REQ, HIGH);
-
-	
-	
-	//}
-
-	//MAIN_LOOP_COUNTER++;
-}
 
 void SpcProcessing::RunSPCDataLoop(void)
 {
@@ -116,27 +84,7 @@ void SpcProcessing::RunSPCDataLoop(void)
 		return;
 	}
 
-
-	//if (MAIN_LOOP_COUNTER > 52 /*ISR_LOOP_COUNTER + 10*/){ //track the loops to see if the ISR is still firing. Sometimes it doesn't trigger properly due to the screen updates
-	
-	
-	//eError.hardwareType = INDICATOR;
-	//
-	//eError.errorLevel = 2;
-	//eError.errorCode = 1;
-	//AddError(&eError);
-	//
-	//digitalWrite(INDICATOR_REQ, LOW);
-	//digitalWrite(INDICATOR_REQ, HIGH);
-	//
-	//
-	//ISR_LOOP_COUNTER = 0;
-	//MAIN_LOOP_COUNTER = 0;
-	//}
-	
-	//MAIN_LOOP_COUNTER++;
-
-	if (!SPC_ISR_LOCK)
+	if (!SPC_ISR_LOCK) //check for locked ISR
 	{
 		//Serial.println(rawSPC);
 
@@ -149,8 +97,8 @@ void SpcProcessing::RunSPCDataLoop(void)
 
 		
 
-		bool dataStreamValid = false;
-		for (unsigned int i = 0; i < 12; i++) //first 12 indcies should be 1's, if not then the data isn't valid
+		bool dataStreamValid = false; //set dataStreamValid false since this is the start of the verification process
+		for (unsigned int i = 0; i < 12; i++) //first 12 indices should be 1's (49), if not then the data isn't valid
 		{
 			if (rawSPC[i] == 48 || rawSPC[16] == 49) //48 is 0 (zero) in ascii 0-12 cannot be 0, and 13 cannot be 1
 			{
@@ -185,8 +133,8 @@ void SpcProcessing::RunSPCDataLoop(void)
 		{
 			
 
-			ClearError(1);
-			ClearError(2);
+			ClearError(1); //TODO change number to enum
+			ClearError(2); //TODO change number to enum
 			byte bytes[13] = {0};
 			for (int i = 0; i < 13; i++)
 			{
@@ -239,12 +187,13 @@ void SpcProcessing::RunSPCDataLoop(void)
 			sCommand.value = decimalNumber;
 			
 			BuildSerialOutput(&sCommand, serialOutputBuffer);
-			newData = true;
+			HasNewData = true;
 
-			for (int i = 0; i < 52; i++)
+			for (int i = 0; i < 52; i++) //clean up array for next go around, cannot use memset since rawSPC is volatile
 			{
 				rawSPC[i] = 0;
 			}
+			
 			
 			MAIN_LOOP_COUNTER = 0;
 			ISR_LOOP_COUNTER = 0;
@@ -256,14 +205,14 @@ void SpcProcessing::RunSPCDataLoop(void)
 
 char *SpcProcessing::GetSerialOutputBuffer(void)
 {
-	newData = false;
+	HasNewData = false;
 	return serialOutputBuffer;
 }
 
 SpcDiameter *SpcProcessing::GetDiameter(void){
 
 	return &spcDiameter;
-	//return SPCDiameter;
+	
 }
 
 int SpcProcessing::GetLoopCounts(void)
@@ -274,7 +223,7 @@ int SpcProcessing::GetLoopCounts(void)
 
 bool SpcProcessing::QueryFailed(void)
 {
-	if (GetLoopCounts() > 50000) //50000 ticks before a failure is recorded (maybe time base is better?)
+	if (GetLoopCounts() > 50000) //50000 ticks before a failure is recorded (maybe time base is better?) need to measure time between routine to test time base
 	{
 		StopQuery();
 		SerialUSB.println("Query Error");
@@ -329,29 +278,27 @@ if (millis() > debugTime + 5000)
 	SerialUSB.print("Number of errors: ");
 	SerialUSB.println(numberErrors);
 	debugTime = millis();
-}
+} //TODO debug code remove when done testing
 	
 	SPC_ISR_LOCK = true; //lock ISR so main program loop doesn't interrupt
 	attachInterrupt(digitalPinToInterrupt(INDICATOR_CLK), ISR_SPC, FALLING);
 	//for (int i = 0; i < 10; i++){
-	delay(2);
+	delay(2); //this delay lengthens the inverted low pulse to the SPC stream. 2ms is the minimum time for the SPC to initiate the clock signal properly, maybe a timer is better?
 	
 	//}
 	ISR_LOOP_COUNTER = 0;
 	MAIN_LOOP_COUNTER = 0;
 	
-	newData = false;
-	digitalWrite(INDICATOR_REQ, HIGH);
-	
-	
+	HasNewData = false;
+	digitalWrite(INDICATOR_REQ, HIGH); //sets output high, inverted low on the SPC
 	
 }
 
 void SpcProcessing::StopQuery(void)
 {
-	detachInterrupt(digitalPinToInterrupt(INDICATOR_CLK));
+	detachInterrupt(digitalPinToInterrupt(INDICATOR_CLK)); //kill interrupt
 	
-	digitalWrite(INDICATOR_REQ, LOW);
+	digitalWrite(INDICATOR_REQ, LOW); 
 }
 
 

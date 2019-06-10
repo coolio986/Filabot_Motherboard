@@ -1,8 +1,8 @@
 ﻿/*===========================================================
-* Project: Digital_Indicator_Firmware
-* Developled using Arduino v1.8.5
+* Project: Motherboard_Firmware
 * Developed by: Anthony Kaul(3D Excellence LLC) in collaboration with Filabot (Triex LLC)
 * This firmware converts SPC (Statistical Process Control) into signals that can be recognized by a PC
+* This firmware also allows for communication to various devices via serial and coordinates all items
 * All rights reserved
 
 
@@ -10,35 +10,36 @@
 * v1.2 - beta
 * ===========================================================*/
 
+// ***** INCLUDES ***** //
 #include <Arduino.h>
-//#include <Arduino_FreeRTOS.h>
-//#include <semphr.h>  // add the FreeRTOS functions for Semaphores (or Flags).
-
+#include <FreeRTOS_ARM.h>
 #include "SerialProcessing.h"
 #include "hardwareTypes.h"
 #include "SpcProcessing.h"
 #include "Screen.h"
-#include "Device_Configuration.h"
+#include "board.h"
 #include "Error.h"
 #include "DataConversions.h"
+// ***** INCLUDES ***** //
 
-#include <FreeRTOS_ARM.h>
+// ***** FreeRTOS  ***** //
+#define INCLUDE_vTaskDelay   1
+#define configUSE_PREEMPTION 1
 // Redefine AVR Flash string macro as nop for ARM
 #undef F
 #define F(str) str
+// ***** FreeRTOS  ***** //
 
 
-
-#define INCLUDE_vTaskDelay   1
-#define configUSE_PREEMPTION 1
-
+// ***** TASKS **** //
 //#define TASKSCREEN
 #define TASKSPC
 //#define TASKSERIALCOMMANDS
 //#define TASKPULLER
 //#define TASKTRAVERSE
+// ***** TASKS **** //
 
-
+// **** PROTOTYPES **** //
 void CheckSerialCommands();
 void RunSPCDataLoop();
 int CheckInteralCommands(char* code);
@@ -53,8 +54,8 @@ void TaskCheckSerialCommands( void *pvParameters );
 void TaskRunSimulation(void *pvParameters );
 void TaskGetPullerRPM (void *pvParameters);
 void TaskUpdateTraverse (void *pvParameters);
-void checkSPC ();
-
+void checkSPC();
+// **** PROTOTYPES **** //
 
 
 
@@ -63,33 +64,33 @@ extern "C" char __data_start[];    // start of SRAM data
 extern "C" char _end[];     // end of SRAM data (used to check amount of SRAM this program's variables use)
 extern "C" char __data_load_end[];  // end of FLASH (used to check amount of Flash this program's code and data uses)
 
-
+// declare since extern in board.h
 bool SIMULATIONACTIVE = false; //sets default value for simulation
 
 
+// ***** CLASS DECLARATIONs **** //
 SerialCommand sCommand;
 SpcProcessing spcProcessing;
 Screen screen;
 SerialProcessing serialProcessing;
-
-
 SemaphoreHandle_t xSemaphore = NULL;
+// ***** CLASS DECLARATIONs **** //
 
 
 
 void setup()
 {
-	SerialUSB.begin(SERIAL_BAUD);
-	//Serial.begin(SERIAL_BAUD);
-	Serial3.begin(SERIAL_BAUD);
-	//Serial.println("starting");
-
+	SerialUSB.begin(SERIAL_BAUD); //using native serial rather than programming port on DUE
+	Serial3.begin(SERIAL_BAUD); //Serial 3 for communication with external screen ILI9341
+	
+	// **** INITS ***** //
 	spcProcessing.init();
 	screen.init();
 	serialProcessing.init();
 	startErrorHandler();
+	// **** INITS ***** //
 
-
+	// ***** Instances ***** //
 	xSemaphore = xSemaphoreCreateMutex();
 
 	#ifdef TASKSCREEN
@@ -142,9 +143,11 @@ void setup()
 	,  NULL );
 	#endif
 
-	vTaskStartScheduler();
-	SerialUSB.println("Insufficient RAM");
-	while(1);
+	// ***** Instances ***** //
+
+	vTaskStartScheduler(); //start FreeRTOS scheduler
+	SerialUSB.println("Insufficient RAM"); //code execution should never get here, but could if there is not enough RAM
+	while(1); //hang processor on error
 }
 
 void loop()
@@ -201,7 +204,7 @@ void TaskCheckSPC(void *pvParameters)  // This is a task.
 
 			spcProcessing.StartQuery();//enable interrupts and start the bit gathering from spc
 			
-			while (!spcProcessing.ISR_READY())
+			while (!spcProcessing.ISR_READY()) //need to remove this while loop
 			{
 				if (spcProcessing.QueryFailed())
 				{
@@ -218,15 +221,13 @@ void TaskCheckSPC(void *pvParameters)  // This is a task.
 			}
 			
 			
-			spcProcessing.RunSPCDataLoop();
-			spcProcessing.StopQuery();
+			spcProcessing.RunSPCDataLoop(); //once ISR is ready we can collect the data and build an output, needs to be done before query is stopped
+			spcProcessing.StopQuery(); // stop query, kill clk interrupt on SPC
 			
 			
-			//SerialUSB.println()
-
-			if (spcProcessing.newData)
+			if (spcProcessing.HasNewData)
 			{
-				SerialUSB.println(spcProcessing.GetDiameter()->charDiameterWithDecimal);
+				SerialUSB.println(spcProcessing.GetDiameter()->charDiameterWithDecimal); //Serial print is broken using long values, use char instead
 			}
 			
 			

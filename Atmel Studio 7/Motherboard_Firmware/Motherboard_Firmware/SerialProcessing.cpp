@@ -6,8 +6,6 @@
 #include "DataConversions.h"
 #include "Structs.h"
 #include "SerialPortExpander.h"
-#include "Device_Configuration.h"
-//#include "USBAPI.h"
 
 
 
