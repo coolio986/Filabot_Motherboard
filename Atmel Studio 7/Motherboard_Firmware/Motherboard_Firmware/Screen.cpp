@@ -36,13 +36,13 @@ void Screen::UpdateDiameter(SpcDiameter *spcDiameter)
 	SerialProcessing serialProcessing;
 	SerialCommand serialCommand;
 
-	serialCommand.command = "setDiameter";
+	serialCommand.command = "SPCDiameter";
 	serialCommand.hardwareType = hardwareType.screen;
 	serialCommand.value = spcDiameter->charDiameterNoDecimal;
 
 	serialProcessing.SendScreenData(&serialCommand);
 
-	serialCommand.command = "setDiameterDecimalLocation";
+	serialCommand.command = "SPCDiameterDecimalLocation";
 	serialCommand.hardwareType = hardwareType.screen;
 	char buf[5] = {0};
 	CONVERT_NUMBER_TO_STRING(INT_FORMAT, spcDiameter->decimalPointLocation, buf);
@@ -84,7 +84,7 @@ void Screen::SendError(Error *error)
 
 	
 
-	serialCommand.command = "setDiameterError"; //this sends it to the "diameter slot" on the screen
+	serialCommand.command = "SPCDiameterError"; //this sends it to the "diameter slot" on the screen
 	serialCommand.hardwareType = hardwareType.screen;
 	serialCommand.value = error->errorDescription;
 

@@ -32,7 +32,7 @@
 
 
 // ***** TASKS **** //
-//#define TASKSCREEN
+#define TASKSCREEN
 #define TASKSPC
 //#define TASKSERIALCOMMANDS
 //#define TASKPULLER
@@ -169,13 +169,26 @@ void TaskSendToScreen(void *pvParameters)  // This is a task.
 
 			if (spcProcessing.HasError())
 			{
-				screen.SendError(spcProcessing.GetError());
+				//screen.SendError(spcProcessing.GetError());  //need to implement later
 			}
-			else
+			if (spcProcessing.HasNewData)
 			{
+				//SerialUSB.println(spcProcessing.GetDiameter()->charDiameterWithDecimal); //Serial print is broken using long values, use char instead
+				//SerialCommand _serialCommand;
+				//_serialCommand.hardwareType = hardwareType.screen;
+				//_serialCommand.command = "Diameter";
+				//_serialCommand.value = spcProcessing.GetDiameter()->charDiameterWithDecimal;
+				//char output[MAX_CMD_LENGTH] = {0};
+				//BuildSerialOutput(&_serialCommand, output);
+				//Serial3.println(output);
+
 				//long running task
 				screen.UpdateDiameter(spcProcessing.GetDiameter());
 			}
+
+
+				
+			
 
 			
 
@@ -225,10 +238,18 @@ void TaskCheckSPC(void *pvParameters)  // This is a task.
 			spcProcessing.StopQuery(); // stop query, kill clk interrupt on SPC
 			
 			
-			if (spcProcessing.HasNewData)
-			{
-				SerialUSB.println(spcProcessing.GetDiameter()->charDiameterWithDecimal); //Serial print is broken using long values, use char instead
-			}
+			//if (spcProcessing.HasNewData)
+			//{
+				//SerialUSB.println(spcProcessing.GetDiameter()->charDiameterWithDecimal); //Serial print is broken using long values, use char instead
+				//SerialCommand _serialCommand;
+				//_serialCommand.hardwareType = hardwareType.screen;
+				//_serialCommand.command = "Diameter";
+				//_serialCommand.value = spcProcessing.GetDiameter()->charDiameterWithDecimal;
+				//char output[MAX_CMD_LENGTH] = {0};
+//
+				//BuildSerialOutput(&_serialCommand, output);
+				//Serial3.println(output);
+			//}
 			
 			
 			xSemaphoreGive(xSemaphore);
