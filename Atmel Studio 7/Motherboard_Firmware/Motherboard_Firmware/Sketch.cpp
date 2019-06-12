@@ -169,7 +169,7 @@ void TaskSendToScreen(void *pvParameters)  // This is a task.
 
 			if (spcProcessing.HasError())
 			{
-				//screen.SendError(spcProcessing.GetError());  //need to implement later
+				screen.SendError(spcProcessing.GetError());  //need to implement later
 			}
 			if (spcProcessing.HasNewData)
 			{

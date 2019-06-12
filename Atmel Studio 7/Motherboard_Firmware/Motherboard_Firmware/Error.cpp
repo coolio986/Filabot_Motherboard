@@ -67,7 +67,7 @@ void ClearError(byte ErrorCode)
 			err->errorCode = 0;
 			err->errorLevel = 0;
 			err->hardwareType = 0;
-			SerialUSB.print("");
+			//SerialUSB.print("");
 		}
 		
 		

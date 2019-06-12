@@ -105,15 +105,14 @@ void SpcProcessing::RunSPCDataLoop(void)
 				dataStreamValid = false;
 				
 				SerialCommand sError;
-				sError.hardwareType = INDICATOR;
+				sError.hardwareType = hardwareType.indicator;
 				sError.command = "INDICATOR";
 				sError.value = "A SPC PROCESSING ERROR HAS OCCURRED";
 				
-				numberErrors++;
-				eError.hardwareType = INDICATOR;
-				//eError.errorValue = "SPC DATA ERROR";
-				eError.errorLevel = 1;
-				eError.errorCode = 2;
+				numberErrors++; //for debug, remove when done
+				eError.hardwareType = hardwareType.indicator;
+				eError.errorLevel = errorLevel.datastream_validation_failed;
+				eError.errorCode = errorCode.spc_data_error;
 				AddError(&eError);
 
 				char sErrorOutput [MAX_CMD_LENGTH] = {0};
@@ -133,8 +132,8 @@ void SpcProcessing::RunSPCDataLoop(void)
 		{
 			
 
-			ClearError(1); //TODO change number to enum
-			ClearError(2); //TODO change number to enum
+			ClearError(errorCode.diameter_device_disconnected); //TODO change number to enum
+			ClearError(errorCode.spc_data_error); //TODO change number to enum
 			byte bytes[13] = {0};
 			for (int i = 0; i < 13; i++)
 			{
@@ -182,7 +181,7 @@ void SpcProcessing::RunSPCDataLoop(void)
 			
 			
 			SerialCommand sCommand;
-			sCommand.hardwareType = INDICATOR;
+			sCommand.hardwareType = hardwareType.indicator;
 			sCommand.command = "INDICATOR";
 			sCommand.value = decimalNumber;
 			
@@ -227,9 +226,9 @@ bool SpcProcessing::QueryFailed(void)
 	{
 		StopQuery();
 		SerialUSB.println("Query Error");
-		eError.hardwareType = INDICATOR;
-		eError.errorLevel = 2;
-		eError.errorCode = 1;
+		eError.hardwareType = hardwareType.indicator;
+		eError.errorLevel = errorLevel.device_disconnected;
+		eError.errorCode = errorCode.diameter_device_disconnected;
 		AddError(&eError);
 		
 		return true;
@@ -239,7 +238,7 @@ bool SpcProcessing::QueryFailed(void)
 
 bool SpcProcessing::HasError(void){
 
-	return eError.errorLevel > 0;
+	return eError.errorCode > 0;
 }
 
 Error *SpcProcessing::GetError(void){
