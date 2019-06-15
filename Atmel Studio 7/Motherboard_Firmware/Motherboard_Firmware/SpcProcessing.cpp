@@ -132,8 +132,8 @@ void SpcProcessing::RunSPCDataLoop(void)
 		{
 			
 
-			ClearError(errorCode.diameter_device_disconnected); //TODO change number to enum
-			ClearError(errorCode.spc_data_error); //TODO change number to enum
+			ClearError(errorCode.diameter_device_disconnected); 
+			ClearError(errorCode.spc_data_error); 
 			byte bytes[13] = {0};
 			for (int i = 0; i < 13; i++)
 			{
@@ -238,7 +238,11 @@ bool SpcProcessing::QueryFailed(void)
 
 bool SpcProcessing::HasError(void){
 
-	return eError.errorCode > 0;
+	return HasErrors();
+	
+	//SerialUSB.println(eError.errorCode);
+
+	//return eError.errorCode > 0;
 }
 
 Error *SpcProcessing::GetError(void){

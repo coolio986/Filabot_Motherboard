@@ -187,12 +187,17 @@ void TaskSendToScreen(void *pvParameters)  // This is a task.
 			}
 
 
+
+
 				
 			
 
-			
+			char randomNum[10] = {0};
+			CONVERT_NUMBER_TO_STRING(INT_FORMAT, random(0, 1000), randomNum); //random for now
+			Spool spool;
+			spool.RPM = randomNum;
 
-			//screen.UpdateSpool(); //TODO implement rpms for screen
+			screen.UpdateSpool(&spool); //TODO implement rpms for screen
 			//screen.UpdatePuller();
 			
 

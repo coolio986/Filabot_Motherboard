@@ -29,9 +29,9 @@ private:
 	public:
 	void SendError(Error *error);
 	void UpdateDiameter(SpcDiameter *spcDiameter);
-	void UpdateSpool(void);
-	void UpdatePuller(RPM *rpm);
-	void UpdateSpool(RPM *rpm);
+	void UpdateSpool(Spool *spool);
+	//void UpdatePuller(RPM *rpm);
+	//void UpdateSpool(RPM *rpm);
 
 	protected:
 

@@ -51,31 +51,31 @@ void Screen::UpdateDiameter(SpcDiameter *spcDiameter)
 	serialProcessing.SendScreenData(&serialCommand);
 }
 
-void Screen::UpdateSpool(RPM *rpm)
+void Screen::UpdateSpool(Spool *spool)
 {
 	SerialProcessing serialProcessing;
 	SerialCommand serialCommand;
 
-	serialCommand.command = "setSpoolRPM";
+	serialCommand.command = "SpoolRPM";
 	serialCommand.hardwareType = hardwareType.screen;
-	serialCommand.value = rpm->charRpm;
+	serialCommand.value = spool->RPM;
 
 	serialProcessing.SendScreenData(&serialCommand);
 
 }
 
-void Screen::UpdatePuller(RPM *rpm)
-{
-	SerialProcessing serialProcessing;
-	SerialCommand serialCommand;
-
-	serialCommand.command = "setPullerRPM";
-	serialCommand.hardwareType = hardwareType.screen;
-	serialCommand.value = rpm->charRpm;
-
-	serialProcessing.SendScreenData(&serialCommand);
-
-}
+//void Screen::UpdatePuller(RPM *rpm)
+//{
+	//SerialProcessing serialProcessing;
+	//SerialCommand serialCommand;
+//
+	//serialCommand.command = "setPullerRPM";
+	//serialCommand.hardwareType = hardwareType.screen;
+	//serialCommand.value = rpm->charRpm;
+//
+	//serialProcessing.SendScreenData(&serialCommand);
+//
+//}
 
 void Screen::SendError(Error *error)
 {
@@ -86,7 +86,13 @@ void Screen::SendError(Error *error)
 
 	serialCommand.command = "SPCDiameterError"; //this sends it to the "diameter slot" on the screen
 	serialCommand.hardwareType = hardwareType.screen;
-	serialCommand.value = error->errorDescription;
+	//serialCommand.value = 
+	//itoa((int)error->errorCode, serialCommand.value, 10);
+	
+	char value[MAX_CMD_LENGTH] = {0};
+	itoa((int)error->errorCode, value, 10);
+	serialCommand.value = value;
+
 
 	serialProcessing.SendScreenData(&serialCommand);
 }

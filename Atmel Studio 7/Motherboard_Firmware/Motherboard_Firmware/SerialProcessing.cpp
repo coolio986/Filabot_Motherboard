@@ -217,7 +217,7 @@ unsigned int SerialProcessing::SendScreenData(SerialCommand *sCommand)
 		char serialOutputBuffer[MAX_CMD_LENGTH] = {0};
 		BuildSerialOutput(&_sCommand, serialOutputBuffer);
 		Serial3.println(serialOutputBuffer);
-		SerialUSB.println(serialOutputBuffer); //Serial print is broken using long values, use char instead
+		//SerialUSB.println(serialOutputBuffer); //Serial print is broken using long values, use char instead
 
 	}
 	return 1;

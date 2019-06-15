@@ -25,11 +25,12 @@ typedef struct
 	float floatDiameterWithDecimal;
 } SpcDiameter;
 
-typedef struct  
+typedef struct
 {
-	char charRpm[10];
-	int intRpm;
-} RPM;
+	char *RPM;
+	char Weight[10];
+	char Slippage[10];
+} Spool;
 
 
 
