@@ -33,7 +33,10 @@ typedef struct
 } Spool;
 
 
-
+typedef struct
+{
+	char *RPM;
+} Puller;
 
 
 

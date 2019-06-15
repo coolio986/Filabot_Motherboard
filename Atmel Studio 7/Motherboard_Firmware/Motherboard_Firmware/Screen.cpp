@@ -64,18 +64,18 @@ void Screen::UpdateSpool(Spool *spool)
 
 }
 
-//void Screen::UpdatePuller(RPM *rpm)
-//{
-	//SerialProcessing serialProcessing;
-	//SerialCommand serialCommand;
-//
-	//serialCommand.command = "setPullerRPM";
-	//serialCommand.hardwareType = hardwareType.screen;
-	//serialCommand.value = rpm->charRpm;
-//
-	//serialProcessing.SendScreenData(&serialCommand);
-//
-//}
+void Screen::UpdatePuller(Puller *puller)
+{
+	SerialProcessing serialProcessing;
+	SerialCommand serialCommand;
+
+	serialCommand.command = "PullerRPM";
+	serialCommand.hardwareType = hardwareType.screen;
+	serialCommand.value = puller->RPM;
+
+	serialProcessing.SendScreenData(&serialCommand);
+
+}
 
 void Screen::SendError(Error *error)
 {

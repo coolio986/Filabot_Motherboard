@@ -97,7 +97,7 @@ void setup()
 	xTaskCreate(
 	TaskSendToScreen
 	,  (const portCHAR *)"SendToScreen"   // A name just for humans
-	,  1000  // This stack size can be checked & adjusted by reading the Stack Highwater
+	,  1500  // This stack size can be checked & adjusted by reading the Stack Highwater
 	,  NULL
 	,   2  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
 	,  NULL );
@@ -197,8 +197,16 @@ void TaskSendToScreen(void *pvParameters)  // This is a task.
 			Spool spool;
 			spool.RPM = randomNum;
 
-			screen.UpdateSpool(&spool); //TODO implement rpms for screen
-			//screen.UpdatePuller();
+			screen.UpdateSpool(&spool); 
+			Puller puller;
+			
+			char randomNum2[10] = {0};
+
+			CONVERT_NUMBER_TO_STRING(INT_FORMAT, random(0, 1000), randomNum2); //random for now
+			puller.RPM = randomNum2;
+			//puller.RPM = "500";
+			
+			screen.UpdatePuller(&puller);
 			
 
 			xSemaphoreGive(xSemaphore);

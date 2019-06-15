@@ -30,7 +30,7 @@ private:
 	void SendError(Error *error);
 	void UpdateDiameter(SpcDiameter *spcDiameter);
 	void UpdateSpool(Spool *spool);
-	//void UpdatePuller(RPM *rpm);
+	void UpdatePuller(Puller *puller);
 	//void UpdateSpool(RPM *rpm);
 
 	protected:
