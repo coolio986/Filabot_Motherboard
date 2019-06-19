@@ -926,6 +926,12 @@
     <Compile Include="Screen.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="SerialNative.cpp">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="SerialNative.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="SerialPortExpander.cpp">
       <SubType>compile</SubType>
     </Compile>

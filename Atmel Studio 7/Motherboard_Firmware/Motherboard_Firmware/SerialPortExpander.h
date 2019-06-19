@@ -22,9 +22,9 @@ private:
   byte computer_bytes_received = 0;    //We need to know how many characters bytes have been received
   byte sensor_bytes_received = 0;      //We need to know how many characters bytes have been received
   const static byte numberOfBufferBytes = 32;
-  int s1 = 43;                         //2560 pin 41 (PL6)
-  int s2 = 42;                         //2560 pin 42 (PL7)
-  int s3 = 41;                         //2560 pin 51 (PG0)
+  int EXPANDER_CHAN_A = 50;                         //2560 pin 41 (PL6)
+  int EXPANDER_CHAN_B = 48;                         //2560 pin 42 (PL7)
+  int EXPANDER_CHAN_C = 16;                         //2560 pin 51 (PG0)
   int port = 0;                       //what port to open
   char computerdata[numberOfBufferBytes];               //A 20 byte character array to hold incoming data from a pc/mac/other
   char sensordata[numberOfBufferBytes];                 //A 30 byte character array to hold incoming data from the sensors

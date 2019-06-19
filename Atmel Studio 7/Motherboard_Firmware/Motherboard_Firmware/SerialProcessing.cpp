@@ -6,6 +6,7 @@
 #include "DataConversions.h"
 #include "Structs.h"
 #include "SerialPortExpander.h"
+#include "SerialNative.h"
 
 
 
@@ -25,7 +26,7 @@ SerialProcessing::SerialProcessing(){
 
 void SerialProcessing::init(){
 	_serialPortExpander.init();
-	SerialUSB.setTimeout(1);
+	SerialNative.setTimeout(1);
 
 }
 
@@ -34,7 +35,7 @@ void SerialProcessing::Poll(void)
 
 	if (!commandActive)
 	{
-		CheckSerial(&SerialUSB, 0); //check for new data coming from PC
+		CheckSerial(&SerialNative, 0); //check for new data coming from PC
 		CheckSerial(&Serial1, 1); //check for new data coming from expander
 	}
 
@@ -62,7 +63,7 @@ unsigned int SerialProcessing::CheckSerial(Stream *port, int portNumber) //exper
 		computerdata[computer_bytes_received] = 0; //We add a 0 to the spot in the array just after the last character we received.. This will stop us from transmitting incorrect data that may have been left in the buffer
 		
 		while(port->available()){
-			SerialUSB.println(port->read());
+			SerialNative.println(port->read());
 		} //flush buffer
 	}
 
@@ -111,7 +112,56 @@ unsigned int SerialProcessing::CheckSerial(HardwareSerial *port, int portNumber)
 		computerdata[computer_bytes_received] = 0; //We add a 0 to the spot in the array just after the last character we received.. This will stop us from transmitting incorrect data that may have been left in the buffer
 		
 		while(port->available()){
-			SerialUSB.println(port->read());
+			SerialNative.println(port->read());
+		} //flush buffer
+	}
+
+	if (computer_bytes_received != 0) {             //If computer_bytes_received does not equal zero
+		
+		CommandParse(&sCommand, computerdata);
+		
+		computer_bytes_received = 0;                  //Reset the var computer_bytes_received to equal 0
+		
+		if (portNumber == 0) //if data comes from USB/PC
+		{
+			ProcessDataFromPC(&sCommand);
+		}
+		else //if data comes from expander
+		{
+			SendToPC(&sCommand);
+			SendScreenData(&sCommand);
+		}
+		
+	}
+	commandActive = false;
+
+	return 1;
+}
+
+unsigned int SerialProcessing::CheckSerial(_SerialNative *port, int portNumber)
+{
+
+	commandActive = true;
+	char computerdata[MAX_CMD_LENGTH] = {0};
+	byte computer_bytes_received = 0;
+
+	SerialCommand sCommand;
+	sCommand.command = NULL;
+	sCommand.hardwareType = NULL;
+	sCommand.value = NULL;
+
+	if (port->available() > 0)
+	{
+		for(int i = 0; i < MAX_CMD_LENGTH; i++)
+		{
+			computerdata[i] = 0; // clear the array
+		}
+
+		computer_bytes_received = port->readBytesUntil(10, computerdata, MAX_CMD_LENGTH); //We read the data sent from the serial monitor(pc/mac/other) until we see a <CR>. We also count how many characters have been received
+		computerdata[computer_bytes_received] = 0; //We add a 0 to the spot in the array just after the last character we received.. This will stop us from transmitting incorrect data that may have been left in the buffer
+		
+		while(port->available()){
+			SerialNative.println(port->read());
 		} //flush buffer
 	}
 
@@ -149,7 +199,7 @@ unsigned int SerialProcessing::CommandParse(SerialCommand *sCommand, char str[MA
 		//Serial.println(hardwareType[i]);
 		if (!isdigit(hardwareID[i]) != 0)
 		{
-			SerialUSB.println("Invalid Hardware ID, number is not a digit");
+			SerialNative.println("Invalid Hardware ID, number is not a digit");
 			return 0;
 		}
 	}
@@ -199,7 +249,7 @@ unsigned int SerialProcessing::SendToPC(SerialCommand *sCommand)
 {
 	char serialOutputBuffer[MAX_CMD_LENGTH] = {0};
 	BuildSerialOutput(sCommand, serialOutputBuffer);
-	SerialUSB.println(serialOutputBuffer);
+	SerialNative.println(serialOutputBuffer);
 
 	return 1;
 
@@ -435,10 +485,10 @@ void PrintRandomRPMData()
 {
 	long rpm = random(10, 15);
 
-	SerialUSB.print(hardwareType.puller);
-	SerialUSB.print(";getrpm = ");
-	SerialUSB.print(rpm);
-	SerialUSB.println(";");
+	//SerialNative.print(hardwareType.puller);
+	//SerialNative.print(";getrpm = ");
+	//SerialNative.print(rpm);
+	//SerialNative.println(";");
 }
 
 //bool startsWith(const char *pre, const char *str)

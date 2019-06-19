@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include "HardwareTypes.h"
+#include "SerialNative.h"
 
 #define SERIAL_BAUD (115200) //baud rate for the serial ports
 
@@ -16,6 +17,7 @@
 #define DELIMITER ";"
 
 extern bool SIMULATIONACTIVE;
+extern _SerialNative SerialNative;
 
 #endif//__BOARD_H__
 

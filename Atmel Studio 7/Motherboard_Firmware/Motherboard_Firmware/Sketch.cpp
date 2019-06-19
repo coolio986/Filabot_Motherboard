@@ -20,6 +20,7 @@
 #include "board.h"
 #include "Error.h"
 #include "DataConversions.h"
+#include "SerialNative.h"
 // ***** INCLUDES ***** //
 
 // ***** FreeRTOS  ***** //
@@ -66,6 +67,7 @@ extern "C" char __data_load_end[];  // end of FLASH (used to check amount of Fla
 
 // declare since extern in board.h
 bool SIMULATIONACTIVE = false; //sets default value for simulation
+_SerialNative SerialNative;
 
 
 // ***** CLASS DECLARATIONs **** //
@@ -80,7 +82,8 @@ SemaphoreHandle_t xSemaphore = NULL;
 
 void setup()
 {
-	SerialUSB.begin(SERIAL_BAUD); //using native serial rather than programming port on DUE
+	SerialNative.begin(SERIAL_BAUD); //using native serial rather than programming port on DUE
+	//SerialUSB.begin(SERIAL_BAUD); //using native serial rather than programming port on DUE
 	Serial3.begin(SERIAL_BAUD); //Serial 3 for communication with external screen ILI9341
 	
 	// **** INITS ***** //
@@ -146,7 +149,7 @@ void setup()
 	// ***** Instances ***** //
 
 	vTaskStartScheduler(); //start FreeRTOS scheduler
-	SerialUSB.println("Insufficient RAM"); //code execution should never get here, but could if there is not enough RAM
+	SerialNative.println("Insufficient RAM"); //code execution should never get here, but could if there is not enough RAM
 	while(1); //hang processor on error
 }
 

@@ -5,6 +5,7 @@
 #include "board.h"
 #include "hardwareTypes.h"
 #include "Structs.h"
+#include "SerialNative.h"
 
 
 const byte numChars = 32;
@@ -22,6 +23,7 @@ class SerialProcessing {
 	void Poll(void);
 	unsigned int CheckSerial(HardwareSerial *port, int portNumber);
 	unsigned int CheckSerial(Stream *port, int portNumber);
+	unsigned int CheckSerial(_SerialNative *port, int portNumber);
 	unsigned int CommandParse(SerialCommand *sCommand, char str[MAX_CMD_LENGTH]);
 	unsigned int SendScreenData(SerialCommand *sCommand);
 	unsigned int SendDataToDevice(SerialCommand *sCommand);

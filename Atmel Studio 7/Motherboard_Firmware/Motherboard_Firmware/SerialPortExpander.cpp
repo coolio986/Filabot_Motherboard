@@ -27,9 +27,9 @@ SerialPortExpander::SerialPortExpander()
 
 void SerialPortExpander::init(void)
 {
-	pinMode(s1, OUTPUT);              //Set the digital pin as output
-	pinMode(s2, OUTPUT);              //Set the digital pin as output
-	pinMode(s3, OUTPUT);              //Set the digital pin as output
+	pinMode(EXPANDER_CHAN_A, OUTPUT);              //Set the digital pin as output
+	pinMode(EXPANDER_CHAN_B, OUTPUT);              //Set the digital pin as output
+	pinMode(EXPANDER_CHAN_C, OUTPUT);              //Set the digital pin as output
 	
 	
 	Serial1.begin(SERIAL_BAUD);
@@ -98,9 +98,9 @@ void SerialPortExpander::Open_channel(SerialCommand *sCommand)
 	if (port < 1 || port > 8)port = 1;              //If the value of the port is within range (1-8) then open that port. If it’s not in range set it port 1
 	port -= 1;                                      //So, this device knows its ports as 0-1 but we have them labeled 1-8 by subtracting one from the port to be opened we correct for this.
 
-	digitalWrite(s1, bitRead(port, 0));             //Here we have two commands combined into one.
-	digitalWrite(s2, bitRead(port, 1));             //The digitalWrite command sets a pin to 1/0 (high or low)
-	digitalWrite(s3, bitRead(port, 2));             //The bitRead command tells us what the bit value is for a specific bit location of a number
+	digitalWrite(EXPANDER_CHAN_A, bitRead(port, 0));             //Here we have two commands combined into one.
+	digitalWrite(EXPANDER_CHAN_B, bitRead(port, 1));             //The digitalWrite command sets a pin to 1/0 (high or low)
+	digitalWrite(EXPANDER_CHAN_C, bitRead(port, 2));             //The bitRead command tells us what the bit value is for a specific bit location of a number
 	delay(2);                                       //this is needed to make sure the channel switching event has completed
 	return;                                         //go back
 }
