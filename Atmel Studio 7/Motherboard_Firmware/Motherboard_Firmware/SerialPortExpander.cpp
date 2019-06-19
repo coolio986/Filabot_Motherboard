@@ -31,6 +31,9 @@ void SerialPortExpander::init(void)
 	pinMode(EXPANDER_CHAN_B, OUTPUT);              //Set the digital pin as output
 	pinMode(EXPANDER_CHAN_C, OUTPUT);              //Set the digital pin as output
 	
+	digitalWrite(EXPANDER_CHAN_A, bitRead(0, 0));             //Here we have two commands combined into one.
+	digitalWrite(EXPANDER_CHAN_B, bitRead(0, 1));             //The digitalWrite command sets a pin to 1/0 (high or low)
+	digitalWrite(EXPANDER_CHAN_C, bitRead(0, 2)); 
 	
 	Serial1.begin(SERIAL_BAUD);
 	Serial1.setTimeout(1);

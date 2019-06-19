@@ -82,7 +82,15 @@ SemaphoreHandle_t xSemaphore = NULL;
 
 void setup()
 {
+	//int usbConnectionRetries = 10;
+	//while (!SerialNative && usbConnectionRetries > 0)
+	//{
+	//delay(100);
+	//usbConnectionRetries--;
+	//}
+	//if (usbConnectionRetries > 0){
 	SerialNative.begin(SERIAL_BAUD); //using native serial rather than programming port on DUE
+	//}
 	//SerialUSB.begin(SERIAL_BAUD); //using native serial rather than programming port on DUE
 	Serial3.begin(SERIAL_BAUD); //Serial 3 for communication with external screen ILI9341
 	
@@ -192,7 +200,7 @@ void TaskSendToScreen(void *pvParameters)  // This is a task.
 
 
 
-				
+			
 			
 
 			char randomNum[10] = {0};
@@ -200,7 +208,7 @@ void TaskSendToScreen(void *pvParameters)  // This is a task.
 			Spool spool;
 			spool.RPM = randomNum;
 
-			screen.UpdateSpool(&spool); 
+			screen.UpdateSpool(&spool);
 			Puller puller;
 			
 			char randomNum2[10] = {0};
@@ -241,9 +249,9 @@ void TaskCheckSPC(void *pvParameters)  // This is a task.
 				}
 				//if (spcProcessing.GetLoopCounts() > 50000)
 				//{
-					//
-					//spcProcessing.StopQuery();
-					//break;
+				//
+				//spcProcessing.StopQuery();
+				//break;
 				//}
 
 				
@@ -256,15 +264,15 @@ void TaskCheckSPC(void *pvParameters)  // This is a task.
 			
 			//if (spcProcessing.HasNewData)
 			//{
-				//SerialUSB.println(spcProcessing.GetDiameter()->charDiameterWithDecimal); //Serial print is broken using long values, use char instead
-				//SerialCommand _serialCommand;
-				//_serialCommand.hardwareType = hardwareType.screen;
-				//_serialCommand.command = "Diameter";
-				//_serialCommand.value = spcProcessing.GetDiameter()->charDiameterWithDecimal;
-				//char output[MAX_CMD_LENGTH] = {0};
-//
-				//BuildSerialOutput(&_serialCommand, output);
-				//Serial3.println(output);
+			//SerialUSB.println(spcProcessing.GetDiameter()->charDiameterWithDecimal); //Serial print is broken using long values, use char instead
+			//SerialCommand _serialCommand;
+			//_serialCommand.hardwareType = hardwareType.screen;
+			//_serialCommand.command = "Diameter";
+			//_serialCommand.value = spcProcessing.GetDiameter()->charDiameterWithDecimal;
+			//char output[MAX_CMD_LENGTH] = {0};
+			//
+			//BuildSerialOutput(&_serialCommand, output);
+			//Serial3.println(output);
 			//}
 			
 			
@@ -340,6 +348,8 @@ void TaskUpdateTraverse(void *pvParameters)  // This is a task.
 	}
 
 }
+
+
 
 
 
