@@ -254,6 +254,28 @@ int Serial_::read(void)
 	}
 }
 
+int Serial_::readb(char *c, size_t length)
+{
+	ring_buffer *buffer = &cdc_rx_buffer;
+
+	// if the head isn't ahead of the tail, we don't have any characters
+	if (buffer->head == buffer->tail)
+	{
+		return 0;
+	}
+	else
+	{
+		unsigned int d = min((buffer->head - buffer->tail) % CDC_SERIAL_BUFFER_SIZE, length);
+		unsigned int i;
+		for (i = 0; i < d; i++) *c++ = buffer->buffer[(buffer->tail + i) % CDC_SERIAL_BUFFER_SIZE];
+		buffer->tail = (unsigned int)(buffer->tail + d) % CDC_SERIAL_BUFFER_SIZE;
+
+		if (USBD_Available(CDC_RX))
+		accept();
+		return d;
+	}
+}
+
 void Serial_::flush(void)
 {
 	USBD_Flush(CDC_TX);

@@ -17,18 +17,14 @@ _SerialNative::_SerialNative()
 
 void _SerialNative::setTimeout(unsigned long timeout)
 {
-	if (!dtr()){
-		return;
-	}
-
-	if (SerialUSB) { SerialUSB.setTimeout(timeout);}
+	SerialUSB.setTimeout(timeout);
 }
 
 void _SerialNative::print(const char *c, ...)
 {
-	if (!dtr()){
-		return;
-	}
+	//if (!dtr()){
+	//return;
+	//}
 
 
 	int ret=0;
@@ -41,14 +37,16 @@ void _SerialNative::print(const char *c, ...)
 	ret=vsprintf(vastr,(const char *)c,ap);
 	va_end(ap);
 
-	if (SerialUSB){	SerialUSB.print(vastr); }
+	SerialUSB.write(vastr, MAX_CMD_LENGTH);
+	
+	//if (SerialUSB){	SerialUSB.print(vastr); }
 }
 
 void _SerialNative::print(char *c, ...)
 {
-	if (!dtr()){
-		return;
-	}
+	//if (!dtr()){
+	//return;
+	//}
 	
 	int ret=0;
 	char vastr[MAX_CMD_LENGTH]={0};
@@ -60,14 +58,16 @@ void _SerialNative::print(char *c, ...)
 	ret=vsprintf(vastr,(char *)c,ap);
 	va_end(ap);
 
-	if (SerialUSB){	SerialUSB.print(vastr); }
+	SerialUSB.write(vastr, MAX_CMD_LENGTH);
+
+	//if (SerialUSB){	SerialUSB.print(vastr); }
 }
 
 void _SerialNative::println(const char *c, ...)
 {
-	if (!dtr()){
-		return;
-	}
+	//if (!dtr()){
+	//return;
+	//}
 	
 
 	int ret=0;
@@ -80,17 +80,24 @@ void _SerialNative::println(const char *c, ...)
 	ret=vsprintf(vastr,(const char *)c,ap);
 	va_end(ap);
 
-	if (SerialUSB)
-	{
-		SerialUSB.println(vastr);
-	}
+	
+
+	//if (SerialUSB)
+	//{
+	//SerialUSB.println(vastr);
+	//
+	//}
+	
+
+	SerialUSB.write(vastr, MAX_CMD_LENGTH);
+	SerialUSB.write("\r\n");
 }
 
 void _SerialNative::println(char *c, ...)
 {
-	if (!dtr()){
-		return;
-	}
+	//if (!dtr()){
+	//return;
+	//}
 
 	int ret=0;
 	char vastr[MAX_CMD_LENGTH]={0};
@@ -102,7 +109,10 @@ void _SerialNative::println(char *c, ...)
 	ret=vsprintf(vastr,(char *)c,ap);
 	va_end(ap);
 
-	if (SerialUSB){	SerialUSB.println(vastr); }
+	SerialUSB.write(vastr, MAX_CMD_LENGTH);
+	SerialUSB.write("\r\n");
+
+	//if (SerialUSB){	SerialUSB.println(vastr); }
 }
 
 void _SerialNative::print(int num)

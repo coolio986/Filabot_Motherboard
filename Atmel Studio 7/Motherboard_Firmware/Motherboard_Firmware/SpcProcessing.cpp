@@ -117,8 +117,7 @@ void SpcProcessing::RunSPCDataLoop(void)
 
 				char sErrorOutput [MAX_CMD_LENGTH] = {0};
 				BuildSerialOutput(&sError, sErrorOutput);
-				//SerialUSB.println(sErrorOutput);
-				SerialNative.println(sErrorOutput);
+				//SerialNative.println(sErrorOutput);
 				SPCDiameter = 0.00;
 				ISR_LOOP_COUNTER = 0;
 				break;
@@ -226,8 +225,7 @@ bool SpcProcessing::QueryFailed(void)
 	if (GetLoopCounts() > 50000) //50000 ticks before a failure is recorded (maybe time base is better?) need to measure time between routine to test time base
 	{
 		StopQuery();
-		//SerialUSB.println("Query Error");
-		SerialNative.println("Query Error");
+		//SerialNative.println("Query Error");
 		eError.hardwareType = hardwareType.indicator;
 		eError.errorLevel = errorLevel.device_disconnected;
 		eError.errorCode = errorCode.diameter_device_disconnected;
@@ -282,8 +280,7 @@ if (millis() > debugTime + 5000)
 {
 	
 	
-	SerialNative.println("Number of errors: %d", numberErrors);
-	//SerialUSB.println(numberErrors);
+	//SerialNative.println("Number of errors: %d", numberErrors);
 	debugTime = millis();
 } //TODO debug code remove when done testing
 	

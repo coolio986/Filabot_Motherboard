@@ -35,7 +35,7 @@
 // ***** TASKS **** //
 #define TASKSCREEN
 #define TASKSPC
-//#define TASKSERIALCOMMANDS
+#define TASKSERIALCOMMANDS
 //#define TASKPULLER
 //#define TASKTRAVERSE
 // ***** TASKS **** //
@@ -90,6 +90,7 @@ void setup()
 	//}
 	//if (usbConnectionRetries > 0){
 	SerialNative.begin(SERIAL_BAUD); //using native serial rather than programming port on DUE
+	SerialNative.setTimeout(1);
 	//}
 	//SerialUSB.begin(SERIAL_BAUD); //using native serial rather than programming port on DUE
 	Serial3.begin(SERIAL_BAUD); //Serial 3 for communication with external screen ILI9341
@@ -262,18 +263,18 @@ void TaskCheckSPC(void *pvParameters)  // This is a task.
 			spcProcessing.StopQuery(); // stop query, kill clk interrupt on SPC
 			
 			
-			//if (spcProcessing.HasNewData)
-			//{
-			//SerialUSB.println(spcProcessing.GetDiameter()->charDiameterWithDecimal); //Serial print is broken using long values, use char instead
-			//SerialCommand _serialCommand;
-			//_serialCommand.hardwareType = hardwareType.screen;
-			//_serialCommand.command = "Diameter";
-			//_serialCommand.value = spcProcessing.GetDiameter()->charDiameterWithDecimal;
-			//char output[MAX_CMD_LENGTH] = {0};
-			//
-			//BuildSerialOutput(&_serialCommand, output);
-			//Serial3.println(output);
-			//}
+			if (spcProcessing.HasNewData)
+			{
+				//SerialUSB.println(spcProcessing.GetDiameter()->charDiameterWithDecimal); //Serial print is broken using long values, use char instead
+				SerialCommand _serialCommand;
+				_serialCommand.hardwareType = hardwareType.indicator;
+				_serialCommand.command = "Diameter";
+				_serialCommand.value = spcProcessing.GetDiameter()->charDiameterWithDecimal;
+				char output[MAX_CMD_LENGTH] = {0};
+				
+				BuildSerialOutput(&_serialCommand, output);
+				SerialNative.println(output);
+			}
 			
 			
 			xSemaphoreGive(xSemaphore);
