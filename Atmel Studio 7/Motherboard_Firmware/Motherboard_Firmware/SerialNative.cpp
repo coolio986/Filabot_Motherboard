@@ -15,23 +15,8 @@ _SerialNative::_SerialNative()
 {
 } //SerialNative
 
-//bool _SerialNative::begin(uint32_t baud_count)
-//{
-//SerialUSB.begin(baud_count);
-//return false;
-//}
-//bool _SerialNative::available()
-//{
-//return SerialUSB.available();
-//}
-
 void _SerialNative::setTimeout(unsigned long timeout)
 {
-	//if (!USBD_Connected)
-	//{
-	//return;
-	//}
-
 	if (!dtr()){
 		return;
 	}
@@ -41,12 +26,6 @@ void _SerialNative::setTimeout(unsigned long timeout)
 
 void _SerialNative::print(const char *c, ...)
 {
-	
-	//if (!USBD_Connected)
-	//{
-	//return;
-	//}
-
 	if (!dtr()){
 		return;
 	}
@@ -63,20 +42,10 @@ void _SerialNative::print(const char *c, ...)
 	va_end(ap);
 
 	if (SerialUSB){	SerialUSB.print(vastr); }
-
-
-
-
 }
 
 void _SerialNative::print(char *c, ...)
 {
-
-	//if (!USBD_Connected)
-	//{
-	//return;
-	//}
-
 	if (!dtr()){
 		return;
 	}
@@ -92,19 +61,10 @@ void _SerialNative::print(char *c, ...)
 	va_end(ap);
 
 	if (SerialUSB){	SerialUSB.print(vastr); }
-
-
-
-
 }
 
 void _SerialNative::println(const char *c, ...)
 {
-	//if (!USBD_Connected)
-	//{
-		//return;
-	//}
-
 	if (!dtr()){
 		return;
 	}
@@ -124,19 +84,10 @@ void _SerialNative::println(const char *c, ...)
 	{
 		SerialUSB.println(vastr);
 	}
-
-
-	
 }
 
 void _SerialNative::println(char *c, ...)
 {
-
-	//if (!USBD_Connected)
-	//{
-	//return;
-	//}
-
 	if (!dtr()){
 		return;
 	}
@@ -156,12 +107,6 @@ void _SerialNative::println(char *c, ...)
 
 void _SerialNative::print(int num)
 {
-
-	//if (!USBD_Connected)
-	//{
-	//return;
-	//}
-
 	if (!dtr()){
 		return;
 	}
@@ -171,11 +116,6 @@ void _SerialNative::print(int num)
 
 void _SerialNative::println(int num)
 {
-	//if (!USBD_Connected)
-	//{
-	//return;
-	//}
-
 	if (!dtr()){
 		return;
 	}
@@ -185,11 +125,6 @@ void _SerialNative::println(int num)
 
 size_t _SerialNative::readBytesUntil(char terminator, uint8_t *buffer, size_t length)
 {
-	//if (!USBD_Connected)
-	//{
-		//return 0;
-	//}
-
 	if (!dtr()){
 		return 0;
 	}
@@ -198,11 +133,6 @@ size_t _SerialNative::readBytesUntil(char terminator, uint8_t *buffer, size_t le
 
 size_t _SerialNative::readBytesUntil( char terminator, char *buffer, size_t length)
 {
-	//if (!USBD_Connected)
-	//{
-	//return;
-	//}
-
 	if (!dtr()){
 		return 0;
 	}
@@ -210,11 +140,6 @@ size_t _SerialNative::readBytesUntil( char terminator, char *buffer, size_t leng
 }
 int _SerialNative::read()
 {
-	//if (!USBD_Connected)
-	//{
-		//return 0;
-	//}
-
 	if (!dtr()){
 		return 0;
 	}
