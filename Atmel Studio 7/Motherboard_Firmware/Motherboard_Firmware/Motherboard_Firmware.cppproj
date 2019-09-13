@@ -43,7 +43,7 @@
       </framework-data>
     </AsfFrameworkConfig>
     <avrtool>com.atmel.avrdbg.tool.atmelice</avrtool>
-    <avrtoolserialnumber>J41800093192</avrtoolserialnumber>
+    <avrtoolserialnumber>J41800099052</avrtoolserialnumber>
     <avrdeviceexpectedsignature>0x285E0A60</avrdeviceexpectedsignature>
     <com_atmel_avrdbg_tool_atmelice>
       <ToolOptions>
@@ -63,7 +63,7 @@
         <InterfaceName>JTAG</InterfaceName>
       </ToolOptions>
       <ToolType>com.atmel.avrdbg.tool.atmelice</ToolType>
-      <ToolNumber>J41800093192</ToolNumber>
+      <ToolNumber>J41800099052</ToolNumber>
       <ToolName>Atmel-ICE</ToolName>
     </com_atmel_avrdbg_tool_atmelice>
     <avrtoolinterface>JTAG</avrtoolinterface>
@@ -83,7 +83,8 @@
           </JtagDaisyChainDevices>
           <SwdClock>4000000</SwdClock>
         </InterfaceProperties>
-        <InterfaceName>JTAG</InterfaceName>
+        <InterfaceName>SWD</InterfaceName>
+        <JlinkConfigFile>C:\Users\Anthony\Documents\GitHub\Filabot_Motherboard\Atmel Studio 7\Motherboard_Firmware\Motherboard_Firmware\jlink.config</JlinkConfigFile>
       </ToolOptions>
       <ToolType>com.atmel.avrdbg.tool.samice</ToolType>
       <ToolNumber>801006528</ToolNumber>
@@ -134,6 +135,11 @@
             <Value>..\include\libraries\FreeRTOS_ARM\src</Value>
             <Value>..\include\libraries\FreeRTOS_ARM\src\utility</Value>
             <Value>..\include\libraries\SPI\src</Value>
+            <Value>..\include\libraries\Encoder</Value>
+            <Value>..\include\libraries\Encoder\utility</Value>
+            <Value>..\include\libraries\Adafruit_ADS1X15</Value>
+            <Value>..\include\libraries\Wire</Value>
+            <Value>..\include\libraries\Wire\src</Value>
           </ListValues>
         </armgcc.compiler.directories.IncludePaths>
         <armgcc.compiler.optimization.level>Optimize for size (-Os)</armgcc.compiler.optimization.level>
@@ -180,6 +186,11 @@
             <Value>..\include\libraries\FreeRTOS_ARM\src</Value>
             <Value>..\include\libraries\FreeRTOS_ARM\src\utility</Value>
             <Value>..\include\libraries\SPI\src</Value>
+            <Value>..\include\libraries\Encoder</Value>
+            <Value>..\include\libraries\Encoder\utility</Value>
+            <Value>..\include\libraries\Adafruit_ADS1X15</Value>
+            <Value>..\include\libraries\Wire</Value>
+            <Value>..\include\libraries\Wire\src</Value>
           </ListValues>
         </armgcccpp.compiler.directories.IncludePaths>
         <armgcccpp.compiler.optimization.level>Optimize for size (-Os)</armgcccpp.compiler.optimization.level>
@@ -271,6 +282,11 @@
             <Value>../src/USB</Value>
             <Value>../src/avr</Value>
             <Value>../linker_scripts/linker_scripts/gcc</Value>
+            <Value>..\include\libraries\Encoder</Value>
+            <Value>..\include\libraries\Encoder\utility</Value>
+            <Value>..\include\libraries\Adafruit_ADS1X15</Value>
+            <Value>..\include\libraries\Wire</Value>
+            <Value>..\include\libraries\Wire\src</Value>
           </ListValues>
         </armgcc.compiler.directories.IncludePaths>
         <armgcc.compiler.optimization.level>Optimize most (-O3)</armgcc.compiler.optimization.level>
@@ -326,6 +342,11 @@
             <Value>../src/USB</Value>
             <Value>../src/avr</Value>
             <Value>../linker_scripts/linker_scripts/gcc</Value>
+            <Value>..\include\libraries\Encoder</Value>
+            <Value>..\include\libraries\Encoder\utility</Value>
+            <Value>..\include\libraries\Adafruit_ADS1X15</Value>
+            <Value>..\include\libraries\Wire</Value>
+            <Value>..\include\libraries\Wire\src</Value>
           </ListValues>
         </armgcccpp.compiler.directories.IncludePaths>
         <armgcccpp.compiler.optimization.OtherFlags>-fno-threadsafe-statics -fno-exceptions</armgcccpp.compiler.optimization.OtherFlags>
@@ -494,6 +515,21 @@
     <Compile Include="include\itoa.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="include\libraries\Adafruit_ADS1X15\Adafruit_ADS1015.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="include\libraries\Encoder\Encoder.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="include\libraries\Encoder\utility\direct_pin_read.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="include\libraries\Encoder\utility\interrupt_config.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="include\libraries\Encoder\utility\interrupt_pins.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="include\libraries\FreeRTOS_ARM\src\basic_io_arm.h">
       <SubType>compile</SubType>
     </Compile>
@@ -603,6 +639,9 @@
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="include\libraries\Vector\Vector\VectorDefinitions.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="include\libraries\Wire\src\Wire.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="include\Print.h">
@@ -1055,6 +1094,12 @@
     <Compile Include="src\itoa.c">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="src\libraries\Adafruit_ADS1X15\Adafruit_ADS1015.cpp">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\libraries\Encoder\Encoder.cpp">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="src\libraries\FreeRTOS_ARM\src\assertMsg.cpp">
       <SubType>compile</SubType>
     </Compile>
@@ -1092,6 +1137,9 @@
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\libraries\SPI\src\SPI.cpp">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\libraries\Wire\src\Wire.cpp">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\main.cpp">
@@ -1177,6 +1225,9 @@
     <Folder Include="include\avr\" />
     <Folder Include="include\include\" />
     <Folder Include="include\libraries\" />
+    <Folder Include="include\libraries\Adafruit_ADS1X15\" />
+    <Folder Include="include\libraries\Encoder\" />
+    <Folder Include="include\libraries\Encoder\utility\" />
     <Folder Include="include\libraries\FreeRTOS_ARM\" />
     <Folder Include="include\libraries\FreeRTOS_ARM\src\" />
     <Folder Include="include\libraries\FreeRTOS_ARM\src\utility\" />
@@ -1186,6 +1237,8 @@
     <Folder Include="include\libraries\SPI\" />
     <Folder Include="include\libraries\SPI\src\" />
     <Folder Include="include\libraries\Vector\Vector" />
+    <Folder Include="include\libraries\Wire\" />
+    <Folder Include="include\libraries\Wire\src\" />
     <Folder Include="include\sam3xa\" />
     <Folder Include="include\sam3xa\include\" />
     <Folder Include="include\sam3xa\include\component\" />
@@ -1197,6 +1250,8 @@
     <Folder Include="linker_scripts\linker_scripts\gcc\" />
     <Folder Include="src\" />
     <Folder Include="src\libraries\" />
+    <Folder Include="src\libraries\Adafruit_ADS1X15\" />
+    <Folder Include="src\libraries\Encoder\" />
     <Folder Include="src\libraries\FreeRTOS_ARM\" />
     <Folder Include="src\libraries\FreeRTOS_ARM\src\" />
     <Folder Include="src\libraries\FreeRTOS_ARM\src\utility\" />
@@ -1205,6 +1260,8 @@
     <Folder Include="src\libraries\SPI\src\" />
     <Folder Include="src\include" />
     <Folder Include="src\avr" />
+    <Folder Include="src\libraries\Wire\" />
+    <Folder Include="src\libraries\Wire\src\" />
     <Folder Include="src\sam3xa" />
     <Folder Include="src\sam3xa\include" />
     <Folder Include="src\USB" />

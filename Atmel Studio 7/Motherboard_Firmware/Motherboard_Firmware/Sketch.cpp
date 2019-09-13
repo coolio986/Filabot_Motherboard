@@ -21,6 +21,9 @@
 #include "Error.h"
 #include "DataConversions.h"
 #include "SerialNative.h"
+#include <Encoder.h>
+#include <Wire.h>
+#include <Adafruit_ADS1015.h>
 // ***** INCLUDES ***** //
 
 // ***** FreeRTOS  ***** //
@@ -38,7 +41,10 @@
 #define TASKSERIALCOMMANDS
 //#define TASKPULLER
 //#define TASKTRAVERSE
+#define ENCODER
 // ***** TASKS **** //
+
+
 
 // **** PROTOTYPES **** //
 void CheckSerialCommands();
@@ -55,6 +61,7 @@ void TaskCheckSerialCommands( void *pvParameters );
 void TaskRunSimulation(void *pvParameters );
 void TaskGetPullerRPM (void *pvParameters);
 void TaskUpdateTraverse (void *pvParameters);
+void TaskCheckEncoder (void *pvParameters);
 void checkSPC();
 // **** PROTOTYPES **** //
 
@@ -76,12 +83,24 @@ SpcProcessing spcProcessing;
 Screen screen;
 SerialProcessing serialProcessing;
 SemaphoreHandle_t xSemaphore = NULL;
+Adafruit_ADS1115 ads;  /* Use this for the 16-bit version */
+#ifdef ENCODER
+Encoder screenEncoder(ENCODER_PINA, ENCODER_PINB);
+#endif
 // ***** CLASS DECLARATIONs **** //
 
+
+float pullerRPM = 0;
+int32_t previousEncoderValue = 0;
+unsigned long previousMillis = 834000;
+int toggle = 0;
 
 
 void setup()
 {
+	
+	
+	
 	//int usbConnectionRetries = 10;
 	//while (!SerialNative && usbConnectionRetries > 0)
 	//{
@@ -91,6 +110,14 @@ void setup()
 	//if (usbConnectionRetries > 0){
 	SerialNative.begin(SERIAL_BAUD); //using native serial rather than programming port on DUE
 	SerialNative.setTimeout(1);
+
+	ads.begin();
+	ads.setGain(GAIN_ONE);
+
+	pinMode(ENCODER_PB, INPUT_PULLUP);
+	pinMode(START_PB, INPUT_PULLUP);
+	pinMode(STOP_PB, INPUT_PULLUP);
+
 	//}
 	//SerialUSB.begin(SERIAL_BAUD); //using native serial rather than programming port on DUE
 	Serial3.begin(SERIAL_BAUD); //Serial 3 for communication with external screen ILI9341
@@ -104,6 +131,9 @@ void setup()
 
 	// ***** Instances ***** //
 	xSemaphore = xSemaphoreCreateMutex();
+
+	
+	
 
 	#ifdef TASKSCREEN
 	xTaskCreate(
@@ -155,6 +185,16 @@ void setup()
 	,  NULL );
 	#endif
 
+	#ifdef ENCODER
+	xTaskCreate(
+	TaskCheckEncoder
+	,  (const portCHAR *)"CheckEncoder"   // A name just for humans
+	,  500  // This stack size can be checked & adjusted by reading the Stack Highwater
+	,  NULL
+	,  2  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
+	,  NULL );
+	#endif
+
 	// ***** Instances ***** //
 
 	vTaskStartScheduler(); //start FreeRTOS scheduler
@@ -193,9 +233,10 @@ void TaskSendToScreen(void *pvParameters)  // This is a task.
 				//char output[MAX_CMD_LENGTH] = {0};
 				//BuildSerialOutput(&_serialCommand, output);
 				//Serial3.println(output);
-
+				
 				//long running task
 				screen.UpdateDiameter(spcProcessing.GetDiameter());
+				
 			}
 
 
@@ -204,21 +245,21 @@ void TaskSendToScreen(void *pvParameters)  // This is a task.
 			
 			
 
-			char randomNum[10] = {0};
-			CONVERT_NUMBER_TO_STRING(INT_FORMAT, random(0, 1000), randomNum); //random for now
-			Spool spool;
-			spool.RPM = randomNum;
+			//char randomNum[10] = {0};
+			//CONVERT_NUMBER_TO_STRING(INT_FORMAT, random(0, 1000), randomNum); //random for now
+			//Spool spool;
+			//spool.RPM = randomNum;
 
-			screen.UpdateSpool(&spool);
-			Puller puller;
+			//screen.UpdateSpool(&spool);
+			//Puller puller;
 			
-			char randomNum2[10] = {0};
+			//char randomNum2[10] = {0};
 
-			CONVERT_NUMBER_TO_STRING(INT_FORMAT, random(0, 1000), randomNum2); //random for now
-			puller.RPM = randomNum2;
+			//CONVERT_NUMBER_TO_STRING(INT_FORMAT, random(0, 1000), randomNum2); //random for now
+			//puller.RPM = randomNum2;
 			//puller.RPM = "500";
 			
-			screen.UpdatePuller(&puller);
+			//screen.UpdatePuller(&puller);
 			
 
 			xSemaphoreGive(xSemaphore);
@@ -274,6 +315,7 @@ void TaskCheckSPC(void *pvParameters)  // This is a task.
 				
 				BuildSerialOutput(&_serialCommand, output);
 				SerialNative.println(output);
+				
 			}
 			
 			
@@ -295,7 +337,6 @@ void TaskCheckSerialCommands(void *pvParameters)  // This is a task.
 			xLastWakeTime = xTaskGetTickCount();
 
 			serialProcessing.Poll();
-
 			xSemaphoreGive(xSemaphore);
 			vTaskDelayUntil( &xLastWakeTime, 10);
 		}
@@ -312,10 +353,15 @@ void TaskGetPullerRPM(void *pvParameters)  // This is a task.
 			xLastWakeTime = xTaskGetTickCount();
 
 			SerialCommand serialCommand;
-			serialCommand.command = "getRpm";
+			serialCommand.command = "getrpm";
 			serialCommand.hardwareType = hardwareType.puller;
+			serialCommand.value = NULL;
+			
 			
 			serialProcessing.SendDataToDevice(&serialCommand);
+			delay(10);
+			serialProcessing.CheckSerial(&Serial1, serialCommand.hardwareType);
+			
 
 			xSemaphoreGive(xSemaphore);
 			vTaskDelayUntil( &xLastWakeTime, 50);
@@ -336,11 +382,98 @@ void TaskUpdateTraverse(void *pvParameters)  // This is a task.
 			xLastWakeTime = xTaskGetTickCount();
 
 			SerialCommand serialCommand;
-			serialCommand.command = "getRpm";
+			serialCommand.command = "SpoolRpm";
 			serialCommand.hardwareType = hardwareType.traverse;
+			serialCommand.value = NULL;
 			
-			serialProcessing.SendDataToDevice(&serialCommand);
+			
+			//serialProcessing.SendDataToDevice(&serialCommand);
+			//serialProcessing.CheckSerial(&Serial1, serialCommand.hardwareType);
+			
+			
+			xSemaphoreGive(xSemaphore);
+			vTaskDelayUntil( &xLastWakeTime, 50);
+		}
 
+		
+	}
+
+}
+
+void TaskCheckEncoder(void *pvParameters)  // This is a task.
+{
+	while(1) // A Task shall never return or exit.
+	{
+		if ( xSemaphoreTake( xSemaphore, ( TickType_t ) 10 ) == pdTRUE )
+		{
+			TickType_t xLastWakeTime;
+			xLastWakeTime = xTaskGetTickCount();
+
+			#ifdef ENCODER
+			//SerialNative.println(screenEncoder.read());
+			int32_t encoderValue = screenEncoder.read();
+			if (previousEncoderValue != encoderValue)
+			{
+				//if (previousEncoderValue > encoderValue)
+				//{
+				//pullerRPM--;
+				//}
+				//else
+				//{
+				//pullerRPM++;
+				//}
+				previousEncoderValue = encoderValue;
+				SerialCommand sCommand;
+				sCommand.hardwareType = hardwareType.puller;
+				sCommand.command = "velocity";
+
+				//float* fValue = &pullerRPM;
+				//*fValue = *fValue * -1;
+				
+				char decimalNumber[20] = {0};
+				CONVERT_FLOAT_TO_STRING(encoderValue, decimalNumber);
+
+				sCommand.value = decimalNumber;
+				//SerialNative.println(encoderValue);
+
+				serialProcessing.SendDataToDevice(&sCommand);
+			}
+			
+			#endif
+
+			//if ((millis() - previousMillis) >= 834000 )
+			//{
+				//SerialCommand traverseCommand;
+				//traverseCommand.hardwareType = hardwareType.traverse;
+				//traverseCommand.command = "moveAbsolute";
+//
+				//if ((toggle % 2) == 0)
+				//{
+					//traverseCommand.value = "120000";
+					//toggle++;
+				//}
+				//else
+				//{
+					//traverseCommand.value = "0";
+					//toggle = 0;
+				//}
+				//previousMillis = millis();
+				//serialProcessing.SendDataToDevice(&traverseCommand);
+				//
+			//}
+			//SerialNative.print("PinA: ");
+			//SerialNative.print(pina);
+			//SerialNative.print("    PinB: ");
+			//SerialNative.println(pinb);
+			
+			//int16_t adc1;
+			//adc1 = ads.readADC_SingleEnded(0);
+			//SerialNative.print("AIN1: ");
+			//
+			//SerialNative.println(adc1);
+			
+			
+			
 			xSemaphoreGive(xSemaphore);
 			vTaskDelayUntil( &xLastWakeTime, 50);
 		}

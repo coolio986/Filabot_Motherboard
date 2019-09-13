@@ -33,10 +33,10 @@ void SerialPortExpander::init(void)
 	
 	digitalWrite(EXPANDER_CHAN_A, bitRead(0, 0));             //Here we have two commands combined into one.
 	digitalWrite(EXPANDER_CHAN_B, bitRead(0, 1));             //The digitalWrite command sets a pin to 1/0 (high or low)
-	digitalWrite(EXPANDER_CHAN_C, bitRead(0, 2)); 
+	digitalWrite(EXPANDER_CHAN_C, bitRead(0, 2));
 	
-	Serial1.begin(SERIAL_BAUD);
-	Serial1.setTimeout(1);
+	Serial1.begin(115200);
+	Serial1.setTimeout(50);
 	
 }
 
@@ -48,48 +48,35 @@ void SerialPortExpander::ProcessSerialExpander(SerialCommand *sCommand)
 
 	char charBuilder[MAX_CMD_LENGTH] = {0};
 	
-	//BUILD_SERIAL_OUTPUT(sCommand->hardwareType, sCommand->command, charBuilder);
-	BuildSerialOutput(sCommand, charBuilder);
+	
+	if (sCommand->hardwareType == hardwareType.puller)
+	{
+		if (sCommand->value == NULL)
+		{
+			sprintf(charBuilder, "%s", sCommand->command);
+		}
+		else
+		{
+			sprintf(charBuilder, "%s %s", sCommand->command, sCommand->value);
+		}
+		sprintf(charBuilder, "%s%s", charBuilder, "\r");
+	}
+	else
+	{
+		//BUILD_SERIAL_OUTPUT(sCommand->hardwareType, sCommand->command, charBuilder);
+		BuildSerialOutput(sCommand, charBuilder);
+		sprintf(charBuilder, "%s%s", charBuilder, "\n");
+	}
+	
+
+	SerialNative.println("serial 1 out run");
+
+
 	//BUILD_SERIAL_OUTPUT(sCommand, charBuilder);
-	Serial1.println(charBuilder);
-
-	//if (Serial1.available() > 0)
-	//{
-	//
-	//computer_bytes_received = Serial.readBytesUntil(13, computerdata, numberOfBufferBytes); //We read the data sent from the serial monitor(pc/mac/other) until we see a <CR>. We also count how many characters have been received
-	//computerdata[computer_bytes_received] = 0; //We add a 0 to the spot in the array just after the last character we received.. This will stop us from transmitting incorrect data that may have been left in the buffer
-	//
-	//}
-	//else
-	//{
-	//return;
-	////}
-	//if (computer_bytes_received != 0) {             //If computer_bytes_received does not equal zero
-	//channel = strtok(computerdata, ";");          //Let's parse the string at each colon
-	//cmd = strtok(NULL, ";");                      //Let's parse the string at each colon
-	//Open_channel();                               //Call the function "open_channel" to open the correct data path
-	//
-	//if (cmd != 0) {                               //If a command has been sent
-	//Serial1.print(cmd);
-	//Serial1.print("\r");
-	////altSerial.print(cmd);                       //Send the command from the computer to the Atlas Scientific device using the softserial port
-	////altSerial.print("\r");                      //After we send the command we send a carriage return <CR>
-	//}
-	//computer_bytes_received = 0;                  //Reset the var computer_bytes_received to equal 0
-	//}
-
-	//if (Serial1.available() > 0) {                 //If data has been transmitted from an Atlas Scientific device
-	//
-	//sensor_bytes_received = Serial1.readBytesUntil(13, sensordata, numberOfBufferBytes); //we read the data sent from the Atlas Scientific device until we see a <CR>. We also count how many character have been received
-	//sensordata[sensor_bytes_received] = 0;         //we add a 0 to the spot in the array just after the last character we received. This will stop us from transmitting incorrect data that may have been left in the buffer
-	//
-	//char charBuilder[100];
-	//
-	//BUILD_SERIAL_OUTPUT((port + 1), CleanseData(sensordata), charBuilder);
-	//
-	//Serial.println(charBuilder);            //let’s transmit the data received from the Atlas Scientific device to the serial monitor
-	//}
-
+	//Serial1.println(charBuilder);
+	Serial1.write(charBuilder);
+	//Serial1.write("\n");
+	Serial1.flush();
 
 }
 

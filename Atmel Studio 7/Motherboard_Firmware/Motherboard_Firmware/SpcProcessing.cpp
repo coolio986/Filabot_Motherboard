@@ -222,7 +222,7 @@ int SpcProcessing::GetLoopCounts(void)
 
 bool SpcProcessing::QueryFailed(void)
 {
-	if (GetLoopCounts() > 50000) //50000 ticks before a failure is recorded (maybe time base is better?) need to measure time between routine to test time base
+	if (GetLoopCounts() > 60000) //50000 ticks before a failure is recorded (maybe time base is better?) need to measure time between routine to test time base
 	{
 		StopQuery();
 		//SerialNative.println("Query Error");

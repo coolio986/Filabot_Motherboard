@@ -51,39 +51,10 @@ unsigned int SerialProcessing::CheckSerial(Stream *port, int portNumber) //exper
 	sCommand.command = NULL;
 	sCommand.hardwareType = NULL;
 	sCommand.value = NULL;
-	port->setTimeout(1);
+	port->setTimeout(50);
 
 	int pos = 0;
 	long start = millis();
-	//while (port->available() >= MAX_CMD_LENGTH)
-	//{
-
-	
-	
-	//computerdata[pos] = port->read();
-	//
-	//
-	//if (computerdata[pos] == 10 || computerdata[pos] == 13 || pos >= MAX_CMD_LENGTH || computerdata[pos] == 0)
-	//{
-	//computerdata[pos] = 0;
-	//break;
-	//}
-	//
-	//
-	//pos++;
-	//
-	//if ((millis() - start) > 1000)
-	//{
-	//break;
-	//}
-	//}
-	//
-	//if (pos > 0)
-	//{
-	//long duration  = millis() - start;
-	//
-	//int test = 0;
-	//}
 
 	if (port->available() > 0)
 	{
@@ -127,6 +98,8 @@ unsigned int SerialProcessing::CheckSerial(Stream *port, int portNumber) //exper
 		
 		computer_bytes_received = 0;                  //Reset the var computer_bytes_received to equal 0
 		
+		
+
 		if (portNumber == 0) //if data comes from USB/PC
 		{
 			ProcessDataFromPC(&sCommand);
@@ -146,7 +119,10 @@ unsigned int SerialProcessing::CheckSerial(Stream *port, int portNumber) //exper
 unsigned int SerialProcessing::CheckSerial(HardwareSerial *port, int portNumber)
 {
 
+	
+
 	commandActive = true;
+	
 	char computerdata[MAX_CMD_LENGTH] = {0};
 	byte computer_bytes_received = 0;
 
@@ -155,19 +131,41 @@ unsigned int SerialProcessing::CheckSerial(HardwareSerial *port, int portNumber)
 	sCommand.hardwareType = NULL;
 	sCommand.value = NULL;
 
+	//while(port->available() > 0)
+	//{
+	//int test = 0;
+	//}
+
 	if (port->available() > 0)
 	{
-		for(int i = 0; i < MAX_CMD_LENGTH; i++)
-		{
-			computerdata[i] = 0; // clear the array
-		}
+		//SerialNative.print("start checkserial ");
+	//SerialNative.println(millis());
+		computerdata[MAX_CMD_LENGTH] = {0};
+		
+		//for(int i = 0; i < MAX_CMD_LENGTH; i++)
+		//{
+		//computerdata[i] = 0; // clear the array
+		//}
 
 		computer_bytes_received = port->readBytesUntil(10, computerdata, MAX_CMD_LENGTH); //We read the data sent from the serial monitor(pc/mac/other) until we see a <CR>. We also count how many characters have been received
 		computerdata[computer_bytes_received] = 0; //We add a 0 to the spot in the array just after the last character we received.. This will stop us from transmitting incorrect data that may have been left in the buffer
 		
-		while(port->available()){
-			SerialNative.println(port->read());
-		} //flush buffer
+		//char test[MAX_CMD_LENGTH] = {0};
+		//int i = 0;
+		//while(port->available()){
+		//test[i++] = port->read();
+		//
+		//if (i == MAX_CMD_LENGTH)
+		//{
+		//SerialNative.print(test);
+		//test[MAX_CMD_LENGTH] = {0};
+		//i = 0;
+		//}
+		//
+		//} //flush buffer
+
+		
+		
 	}
 
 	if (computer_bytes_received != 0) {             //If computer_bytes_received does not equal zero
@@ -176,18 +174,25 @@ unsigned int SerialProcessing::CheckSerial(HardwareSerial *port, int portNumber)
 		
 		computer_bytes_received = 0;                  //Reset the var computer_bytes_received to equal 0
 		
-		if (portNumber == 0) //if data comes from USB/PC
-		{
-			ProcessDataFromPC(&sCommand);
-		}
-		else //if data comes from expander
-		{
-			SendToPC(&sCommand);
-			SendScreenData(&sCommand);
-		}
+
+		
+
+
+		//if (portNumber == 0) //if data comes from USB/PC
+		//{
+		//ProcessDataFromPC(&sCommand);
+		//}
+		//else //if data comes from expander
+		//{
+		//SendToPC(&sCommand);
+		SendScreenData(&sCommand);
+		//}
+		//SerialNative.print("stop checkserial ");
+	//SerialNative.println(millis());
 		
 	}
 	commandActive = false;
+	
 
 	return 1;
 }
@@ -244,9 +249,22 @@ unsigned int SerialProcessing::CheckSerial(HardwareSerial *port, int portNumber)
 unsigned int SerialProcessing::CommandParse(SerialCommand *sCommand, char str[MAX_CMD_LENGTH])
 {
 
+	str_replace(str, "\r", "");
+
+	
+
 	char *hardwareID = strtok(str, DELIMITER); //hardware ID
 	char *cmd = strtok(NULL, DELIMITER);
 	char *arguments = strtok(NULL, DELIMITER);
+
+	//if (cmd != '\0' || arguments != '\0'){
+		SerialNative.print(hardwareID);
+		SerialNative.print(";");
+		SerialNative.print(cmd);
+		SerialNative.print(";");
+		SerialNative.println(arguments);
+	//}
+
 
 	for (int i=0; hardwareID[i]!= '\0'; i++)
 	{
@@ -340,7 +358,25 @@ void SerialProcessing::CheckInteralCommands(SerialCommand *sCommand)
 }
 
 
-
+void SerialProcessing::str_replace(char *src, char *oldchars, char *newchars) { // utility string function
+	char *p = strstr(src, oldchars);
+	char buf[MAX_CMD_LENGTH];
+	do {
+		if (p) {
+			memset(buf, '\0', strlen(buf));
+			if (src == p) {
+				strcpy(buf, newchars);
+				strcat(buf, p + strlen(oldchars));
+				} else {
+				strncpy(buf, src, strlen(src) - strlen(p));
+				strcat(buf, newchars);
+				strcat(buf, p + strlen(oldchars));
+			}
+			memset(src, '\0', strlen(src));
+			strcpy(src, buf);
+		}
+	} while (p && (p = strstr(src, oldchars)));
+}
 
 
 

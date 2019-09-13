@@ -41,11 +41,13 @@ class SerialProcessing {
 	unsigned int ProcessDataFromPC(SerialCommand *sCommand);
 	unsigned int SendToPC(SerialCommand *sCommand);
 	bool commandActive = false;  //primitive lock for serial processing to expander
+	void str_replace(char *src, char *oldchars, char *newchars);
 
 };
 
 
 char * CleanseData(char *data);
+
 
 SerialCommand GetSerialArgs(char * serialData);
 bool ExistsInIntArray(uint16_t *arrayToCheck, size_t arraySize, uint16_t numberToCheck);

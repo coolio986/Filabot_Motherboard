@@ -22,9 +22,9 @@ void _SerialNative::setTimeout(unsigned long timeout)
 
 void _SerialNative::print(const char *c, ...)
 {
-	//if (!dtr()){
-	//return;
-	//}
+	if (!dtr()){
+	return;
+	}
 
 
 	int ret=0;
@@ -44,9 +44,9 @@ void _SerialNative::print(const char *c, ...)
 
 void _SerialNative::print(char *c, ...)
 {
-	//if (!dtr()){
-	//return;
-	//}
+	if (!dtr()){
+		return;
+	}
 	
 	int ret=0;
 	char vastr[MAX_CMD_LENGTH]={0};
@@ -65,9 +65,9 @@ void _SerialNative::print(char *c, ...)
 
 void _SerialNative::println(const char *c, ...)
 {
-	//if (!dtr()){
-	//return;
-	//}
+	if (!dtr()){
+		return;
+	}
 	
 
 	int ret=0;
@@ -95,9 +95,9 @@ void _SerialNative::println(const char *c, ...)
 
 void _SerialNative::println(char *c, ...)
 {
-	//if (!dtr()){
-	//return;
-	//}
+	if (!dtr()){
+	return;
+	}
 
 	int ret=0;
 	char vastr[MAX_CMD_LENGTH]={0};
