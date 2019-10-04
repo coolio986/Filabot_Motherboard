@@ -40,6 +40,7 @@
 #define TASKSPC
 #define TASKSERIALCOMMANDS
 //#define TASKPULLER
+#define TASKSPOOL
 //#define TASKTRAVERSE
 #define ENCODER
 // ***** TASKS **** //
@@ -60,6 +61,7 @@ void TaskSendToScreen ( void *pvParameters );
 void TaskCheckSerialCommands( void *pvParameters );
 void TaskRunSimulation(void *pvParameters );
 void TaskGetPullerRPM (void *pvParameters);
+void TaskGetSpoolRPM (void *pvParameters);
 void TaskUpdateTraverse (void *pvParameters);
 void TaskCheckEncoder (void *pvParameters);
 void checkSPC();
@@ -159,7 +161,7 @@ void setup()
 	xTaskCreate(
 	TaskCheckSerialCommands
 	,  (const portCHAR *)"CheckSerialCommands"   // A name just for humans
-	,  1000  // This stack size can be checked & adjusted by reading the Stack Highwater
+	,  2000  // This stack size can be checked & adjusted by reading the Stack Highwater
 	,  NULL
 	,  2  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
 	,  NULL );
@@ -172,6 +174,16 @@ void setup()
 	,  1000  // This stack size can be checked & adjusted by reading the Stack Highwater
 	,  NULL
 	,  2  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
+	,  NULL );
+	#endif
+
+	#ifdef TASKSPOOL
+	xTaskCreate(
+	TaskGetSpoolRPM
+	,  (const portCHAR *)"GetSpoolRPM"   // A name just for humans
+	,  500  // This stack size can be checked & adjusted by reading the Stack Highwater
+	,  NULL
+	,  3  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
 	,  NULL );
 	#endif
 
@@ -372,6 +384,35 @@ void TaskGetPullerRPM(void *pvParameters)  // This is a task.
 
 }
 
+void TaskGetSpoolRPM(void *pvParameters)  // This is a task.
+{
+	while(1) // A Task shall never return or exit.
+	{
+		if ( xSemaphoreTake( xSemaphore, ( TickType_t ) 10 ) == pdTRUE )
+		{
+			TickType_t xLastWakeTime;
+			xLastWakeTime = xTaskGetTickCount();
+
+			SerialCommand serialCommand;
+			serialCommand.command = "SpoolRPM";
+			serialCommand.hardwareType = hardwareType.traverse;
+			serialCommand.value = NULL;
+			
+			
+			serialProcessing.SendDataToDevice(&serialCommand);
+			delay(10);
+			serialProcessing.CheckSerial(&Serial1, serialCommand.hardwareType);
+			
+
+			xSemaphoreGive(xSemaphore);
+			vTaskDelayUntil( &xLastWakeTime, 500);
+		}
+
+		
+	}
+
+}
+
 void TaskUpdateTraverse(void *pvParameters)  // This is a task.
 {
 	while(1) // A Task shall never return or exit.
@@ -404,7 +445,7 @@ void TaskCheckEncoder(void *pvParameters)  // This is a task.
 {
 	while(1) // A Task shall never return or exit.
 	{
-		if ( xSemaphoreTake( xSemaphore, ( TickType_t ) 10 ) == pdTRUE )
+ 		if ( xSemaphoreTake( xSemaphore, ( TickType_t ) 10 ) == pdTRUE )
 		{
 			TickType_t xLastWakeTime;
 			xLastWakeTime = xTaskGetTickCount();

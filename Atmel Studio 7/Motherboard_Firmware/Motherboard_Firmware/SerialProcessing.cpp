@@ -139,7 +139,7 @@ unsigned int SerialProcessing::CheckSerial(HardwareSerial *port, int portNumber)
 	if (port->available() > 0)
 	{
 		//SerialNative.print("start checkserial ");
-	//SerialNative.println(millis());
+		//SerialNative.println(millis());
 		computerdata[MAX_CMD_LENGTH] = {0};
 		
 		//for(int i = 0; i < MAX_CMD_LENGTH; i++)
@@ -188,7 +188,7 @@ unsigned int SerialProcessing::CheckSerial(HardwareSerial *port, int portNumber)
 		SendScreenData(&sCommand);
 		//}
 		//SerialNative.print("stop checkserial ");
-	//SerialNative.println(millis());
+		//SerialNative.println(millis());
 		
 	}
 	commandActive = false;
@@ -248,21 +248,18 @@ unsigned int SerialProcessing::CheckSerial(HardwareSerial *port, int portNumber)
 
 unsigned int SerialProcessing::CommandParse(SerialCommand *sCommand, char str[MAX_CMD_LENGTH])
 {
-
 	str_replace(str, "\r", "");
-
-	
 
 	char *hardwareID = strtok(str, DELIMITER); //hardware ID
 	char *cmd = strtok(NULL, DELIMITER);
 	char *arguments = strtok(NULL, DELIMITER);
 
 	//if (cmd != '\0' || arguments != '\0'){
-		SerialNative.print(hardwareID);
-		SerialNative.print(";");
-		SerialNative.print(cmd);
-		SerialNative.print(";");
-		SerialNative.println(arguments);
+	//SerialNative.print(hardwareID);
+	//SerialNative.print(";");
+	//SerialNative.print(cmd);
+	//SerialNative.print(";");
+	//SerialNative.println(arguments);
 	//}
 
 
@@ -280,6 +277,10 @@ unsigned int SerialProcessing::CommandParse(SerialCommand *sCommand, char str[MA
 	sCommand->command = cmd;
 	sCommand->value = arguments;
 
+	char output[MAX_CMD_LENGTH] = {0};
+	BuildSerialOutput(sCommand, output);
+
+	SerialNative.println(output);
 
 	
 	return 1;
@@ -287,6 +288,39 @@ unsigned int SerialProcessing::CommandParse(SerialCommand *sCommand, char str[MA
 
 unsigned int SerialProcessing::ProcessDataFromPC(SerialCommand *sCommand)
 {
+	int cmp = strcmp(sCommand->command, "GetFullUpdate");
+
+	if ( cmp == 0 && sCommand->hardwareType == hardwareType.internal)
+	{
+		
+		SerialCommand command = {0};
+		command.command = "velocity";
+		command.hardwareType = hardwareType.puller;
+		this->SendDataToDevice(&command);
+		delay(10);
+		CheckSerial(&Serial1, hardwareType.puller);
+
+		//delay(10); //wait for puller to finish reporting back before switching
+		command = {0};
+		command.command = "InnerOffset";
+		command.hardwareType = hardwareType.traverse;
+		//this->SendDataToDevice(&command);
+		CheckSerial(&Serial1, hardwareType.traverse); //force expander to switch to channel 3
+		this->SendDataToDevice(&command);
+		
+		command = {0};
+		command.command = "SpoolWidth";
+		command.hardwareType = hardwareType.traverse;
+		this->SendDataToDevice(&command);
+		CheckSerial(&Serial1, hardwareType.traverse);
+		
+		command = {0};
+		command.command = "RunMode";
+		command.hardwareType = hardwareType.traverse;
+		this->SendDataToDevice(&command);
+		CheckSerial(&Serial1, hardwareType.traverse);
+
+	}
 	if(sCommand->hardwareType == hardwareType.internal)
 	{
 		this->CheckInteralCommands(sCommand);
@@ -358,9 +392,12 @@ void SerialProcessing::CheckInteralCommands(SerialCommand *sCommand)
 }
 
 
-void SerialProcessing::str_replace(char *src, char *oldchars, char *newchars) { // utility string function
+void SerialProcessing::str_replace(char src[MAX_CMD_LENGTH], char *oldchars, char *newchars) { // utility string function
+	
+	
+
 	char *p = strstr(src, oldchars);
-	char buf[MAX_CMD_LENGTH];
+	char buf[MAX_CMD_LENGTH] = {"\0"};
 	do {
 		if (p) {
 			memset(buf, '\0', strlen(buf));

@@ -45,6 +45,7 @@ void SerialPortExpander::ProcessSerialExpander(SerialCommand *sCommand)
 
 	Open_channel(sCommand);
 	//Serial.print(sCommand->hardwareType ";");
+	
 
 	char charBuilder[MAX_CMD_LENGTH] = {0};
 	
@@ -69,7 +70,7 @@ void SerialPortExpander::ProcessSerialExpander(SerialCommand *sCommand)
 	}
 	
 
-	SerialNative.println("serial 1 out run");
+	//SerialNative.println("serial 1 out run");
 
 
 	//BUILD_SERIAL_OUTPUT(sCommand, charBuilder);
@@ -94,6 +95,8 @@ void SerialPortExpander::Open_channel(SerialCommand *sCommand)
 	delay(2);                                       //this is needed to make sure the channel switching event has completed
 	return;                                         //go back
 }
+
+
 
 // default destructor
 SerialPortExpander::~SerialPortExpander()
