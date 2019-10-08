@@ -301,14 +301,6 @@ void TaskCheckSPC(void *pvParameters)  // This is a task.
 				{
 					break;
 				}
-				//if (spcProcessing.GetLoopCounts() > 50000)
-				//{
-				//
-				//spcProcessing.StopQuery();
-				//break;
-				//}
-
-				
 			}
 			
 			
@@ -454,65 +446,31 @@ void TaskCheckEncoder(void *pvParameters)  // This is a task.
 				
 				SerialCommand sCommand = {0};
 				sCommand.hardwareType = hardwareType.puller;
-				//sCommand.command = "velocity";
 
-				char decimalNumber[20] = {0};
-				CONVERT_FLOAT_TO_STRING(encoderValue, decimalNumber);
+				//char decimalNumber[20] = {0};
+				//CONVERT_FLOAT_TO_STRING(encoderValue, decimalNumber);
 				
-				//sCommand.command = encoderValue > previousEncoderValue ? "increase_rpm" : "decrease_rpm";
-				if (encoderValue > previousEncoderValue)
+				
+				if (encoderValue < previousEncoderValue)
 				{
 					sCommand.command = "increase_rpm";
 				}
-				if (encoderValue < previousEncoderValue)
+				if (encoderValue > previousEncoderValue)
 				{
 					sCommand.command = "decrease_rpm";
 				}
-				//sCommand.command = "increase_rpm";
-
-				//sCommand.value = decimalNumber;
-				//SerialNative.println(encoderValue);
-
+				
+				char value[MAX_CMD_LENGTH] = {0};
+				CONVERT_NUMBER_TO_STRING(INT_FORMAT, abs(encoderValue - previousEncoderValue), value);
+				
+				sCommand.value = value;
 				serialProcessing.SendDataToDevice(&sCommand);
-				//delay(10);
+				
 				previousEncoderValue = encoderValue;
 			}
 			
 			#endif
 
-			//if ((millis() - previousMillis) >= 834000 )
-			//{
-			//SerialCommand traverseCommand;
-			//traverseCommand.hardwareType = hardwareType.traverse;
-			//traverseCommand.command = "moveAbsolute";
-			//
-			//if ((toggle % 2) == 0)
-			//{
-			//traverseCommand.value = "120000";
-			//toggle++;
-			//}
-			//else
-			//{
-			//traverseCommand.value = "0";
-			//toggle = 0;
-			//}
-			//previousMillis = millis();
-			//serialProcessing.SendDataToDevice(&traverseCommand);
-			//
-			//}
-			//SerialNative.print("PinA: ");
-			//SerialNative.print(pina);
-			//SerialNative.print("    PinB: ");
-			//SerialNative.println(pinb);
-			
-			//int16_t adc1;
-			//adc1 = ads.readADC_SingleEnded(0);
-			//SerialNative.print("AIN1: ");
-			//
-			//SerialNative.println(adc1);
-			
-			
-			
 			xSemaphoreGive(xSemaphore);
 			vTaskDelayUntil( &xLastWakeTime, 50);
 		}

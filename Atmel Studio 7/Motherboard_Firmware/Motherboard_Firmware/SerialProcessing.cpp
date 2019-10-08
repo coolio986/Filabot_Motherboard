@@ -26,7 +26,7 @@ SerialProcessing::SerialProcessing(){
 
 void SerialProcessing::init(){
 	_serialPortExpander.init();
-	SerialNative.setTimeout(1);
+	SerialNative.setTimeout(50);
 
 }
 
@@ -55,7 +55,7 @@ unsigned int SerialProcessing::CheckSerial(Stream *port, int portNumber) //exper
 	sCommand.command = NULL;
 	sCommand.hardwareType = NULL;
 	sCommand.value = NULL;
-	port->setTimeout(50);
+	port->setTimeout(1);
 
 	int pos = 0;
 	long start = millis();
