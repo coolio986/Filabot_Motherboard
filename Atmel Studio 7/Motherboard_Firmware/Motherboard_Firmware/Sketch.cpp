@@ -36,7 +36,7 @@
 
 
 // ***** TASKS **** //
-#define TASKSCREEN
+//#define TASKSCREEN
 #define TASKSPC
 #define TASKSERIALCOMMANDS
 //#define TASKPULLER
@@ -173,7 +173,7 @@ void setup()
 	,  (const portCHAR *)"GetPullerRPM"   // A name just for humans
 	,  1000  // This stack size can be checked & adjusted by reading the Stack Highwater
 	,  NULL
-	,  2  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
+	,  3  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
 	,  NULL );
 	#endif
 
@@ -371,8 +371,8 @@ void TaskGetPullerRPM(void *pvParameters)  // This is a task.
 			
 			
 			serialProcessing.SendDataToDevice(&serialCommand);
-			delay(10);
-			serialProcessing.CheckSerial(&Serial1, serialCommand.hardwareType);
+			//delay(10);
+			//serialProcessing.CheckSerial(&Serial1, serialCommand.hardwareType);
 			
 
 			xSemaphoreGive(xSemaphore);
@@ -393,17 +393,13 @@ void TaskGetSpoolRPM(void *pvParameters)  // This is a task.
 			TickType_t xLastWakeTime;
 			xLastWakeTime = xTaskGetTickCount();
 
-			SerialCommand serialCommand;
+			SerialCommand serialCommand = {0};
 			serialCommand.command = "SpoolRPM";
 			serialCommand.hardwareType = hardwareType.traverse;
 			serialCommand.value = NULL;
 			
-			
 			serialProcessing.SendDataToDevice(&serialCommand);
-			delay(10);
-			serialProcessing.CheckSerial(&Serial1, serialCommand.hardwareType);
 			
-
 			xSemaphoreGive(xSemaphore);
 			vTaskDelayUntil( &xLastWakeTime, 500);
 		}
@@ -445,7 +441,7 @@ void TaskCheckEncoder(void *pvParameters)  // This is a task.
 {
 	while(1) // A Task shall never return or exit.
 	{
- 		if ( xSemaphoreTake( xSemaphore, ( TickType_t ) 10 ) == pdTRUE )
+		if ( xSemaphoreTake( xSemaphore, ( TickType_t ) 10 ) == pdTRUE )
 		{
 			TickType_t xLastWakeTime;
 			xLastWakeTime = xTaskGetTickCount();
@@ -455,52 +451,54 @@ void TaskCheckEncoder(void *pvParameters)  // This is a task.
 			int32_t encoderValue = screenEncoder.read();
 			if (previousEncoderValue != encoderValue)
 			{
-				//if (previousEncoderValue > encoderValue)
-				//{
-				//pullerRPM--;
-				//}
-				//else
-				//{
-				//pullerRPM++;
-				//}
-				previousEncoderValue = encoderValue;
-				SerialCommand sCommand;
-				sCommand.hardwareType = hardwareType.puller;
-				sCommand.command = "velocity";
-
-				//float* fValue = &pullerRPM;
-				//*fValue = *fValue * -1;
 				
+				SerialCommand sCommand = {0};
+				sCommand.hardwareType = hardwareType.puller;
+				//sCommand.command = "velocity";
+
 				char decimalNumber[20] = {0};
 				CONVERT_FLOAT_TO_STRING(encoderValue, decimalNumber);
+				
+				//sCommand.command = encoderValue > previousEncoderValue ? "increase_rpm" : "decrease_rpm";
+				if (encoderValue > previousEncoderValue)
+				{
+					sCommand.command = "increase_rpm";
+				}
+				if (encoderValue < previousEncoderValue)
+				{
+					sCommand.command = "decrease_rpm";
+				}
+				//sCommand.command = "increase_rpm";
 
-				sCommand.value = decimalNumber;
+				//sCommand.value = decimalNumber;
 				//SerialNative.println(encoderValue);
 
 				serialProcessing.SendDataToDevice(&sCommand);
+				//delay(10);
+				previousEncoderValue = encoderValue;
 			}
 			
 			#endif
 
 			//if ((millis() - previousMillis) >= 834000 )
 			//{
-				//SerialCommand traverseCommand;
-				//traverseCommand.hardwareType = hardwareType.traverse;
-				//traverseCommand.command = "moveAbsolute";
-//
-				//if ((toggle % 2) == 0)
-				//{
-					//traverseCommand.value = "120000";
-					//toggle++;
-				//}
-				//else
-				//{
-					//traverseCommand.value = "0";
-					//toggle = 0;
-				//}
-				//previousMillis = millis();
-				//serialProcessing.SendDataToDevice(&traverseCommand);
-				//
+			//SerialCommand traverseCommand;
+			//traverseCommand.hardwareType = hardwareType.traverse;
+			//traverseCommand.command = "moveAbsolute";
+			//
+			//if ((toggle % 2) == 0)
+			//{
+			//traverseCommand.value = "120000";
+			//toggle++;
+			//}
+			//else
+			//{
+			//traverseCommand.value = "0";
+			//toggle = 0;
+			//}
+			//previousMillis = millis();
+			//serialProcessing.SendDataToDevice(&traverseCommand);
+			//
 			//}
 			//SerialNative.print("PinA: ");
 			//SerialNative.print(pina);

@@ -28,6 +28,7 @@ class SerialProcessing {
 	unsigned int SendScreenData(SerialCommand *sCommand);
 	unsigned int SendDataToDevice(SerialCommand *sCommand);
 	bool newData = false;
+	bool commandActive;
 
 
 
@@ -40,7 +41,7 @@ class SerialProcessing {
 	char serialOutputBuffer[MAX_CMD_LENGTH] = {0};
 	unsigned int ProcessDataFromPC(SerialCommand *sCommand);
 	unsigned int SendToPC(SerialCommand *sCommand);
-	bool commandActive = false;  //primitive lock for serial processing to expander
+	//bool commandActive = false;  //primitive lock for serial processing to expander
 	void str_replace(char src[MAX_CMD_LENGTH], char *oldchars, char *newchars);
 
 };
