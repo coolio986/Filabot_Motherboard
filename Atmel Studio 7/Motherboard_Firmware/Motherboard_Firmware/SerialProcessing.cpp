@@ -33,21 +33,21 @@ void SerialProcessing::init(){
 void SerialProcessing::Poll(void)
 {
 
-	if (!commandActive)
-	{
+	//if (!commandActive)
+	//{
 		CheckSerial(&SerialNative, 0); //check for new data coming from PC
-	}
-	if (!commandActive)
-	{
+	//}
+	//if (!commandActive)
+	//{
 		CheckSerial(&Serial1, 1); //check for new data coming from expander
-	}
+	//}
 	
 
 }
 
-unsigned int SerialProcessing::CheckSerial(Stream *port, int portNumber) //experimental
+unsigned int SerialProcessing::CheckSerial(_SerialNative *port, int portNumber) //experimental
 {
-	commandActive = true;
+	//commandActive = true;
 	char computerdata[MAX_CMD_LENGTH] = {0};
 	byte computer_bytes_received = 0;
 
@@ -55,19 +55,19 @@ unsigned int SerialProcessing::CheckSerial(Stream *port, int portNumber) //exper
 	sCommand.command = NULL;
 	sCommand.hardwareType = NULL;
 	sCommand.value = NULL;
-	port->setTimeout(1);
+	port->setTimeout(10);
 
 	int pos = 0;
 	long start = millis();
 
 	if (port->available() > 0)
 	{
-		for(int i = 0; i < MAX_CMD_LENGTH; i++)
-		{
-			computerdata[i] = 0; // clear the array
-		}
-
+		
+		
+		
 		port->readBlock(computerdata, MAX_CMD_LENGTH);
+		
+		
 		
 		//computer_bytes_received = port->findUntil()
 		//port->readBytes(computerdata, MAX_CMD_LENGTH);
@@ -112,7 +112,7 @@ unsigned int SerialProcessing::CheckSerial(Stream *port, int portNumber) //exper
 		}
 		
 	}
-	commandActive = false;
+	//commandActive = false;
 
 	return 1;
 }
@@ -122,7 +122,7 @@ unsigned int SerialProcessing::CheckSerial(HardwareSerial *port, int portNumber)
 
 	
 
-	commandActive = true;
+	//commandActive = true;
 	
 	char computerdata[MAX_CMD_LENGTH] = {0};
 	byte computer_bytes_received = 0;
@@ -143,9 +143,14 @@ unsigned int SerialProcessing::CheckSerial(HardwareSerial *port, int portNumber)
 			computerdata[i++] = port->read();
 			if (i > MAX_CMD_LENGTH){break;}
 		}
-		//while(port->available() > 0){
-		//port->read();
-		//} //flush buffer
+		for (int j = 8; j < MAX_CMD_LENGTH; j++)
+		{
+			if (computerdata[j] == 51)
+			{
+				int sdf = 79235;
+				sdf = 123;
+			}
+		}
 	}
 
 	//if (computer_bytes_received != 0) {             //If computer_bytes_received does not equal zero
@@ -172,9 +177,8 @@ unsigned int SerialProcessing::CheckSerial(HardwareSerial *port, int portNumber)
 			SendToPC(&sCommand);
 			//SendScreenData(&sCommand);
 		}
-		
 	}
-	commandActive = false;
+	//commandActive = false;
 	
 
 	return 1;
@@ -229,34 +233,35 @@ unsigned int SerialProcessing::ProcessDataFromPC(SerialCommand *sCommand)
 
 	if ( cmp == 0 && sCommand->hardwareType == hardwareType.internal)
 	{
+		FullUpdateRequested = true;
 		
-		SerialCommand command = {0};
-		command.command = "velocity";
-		command.hardwareType = hardwareType.puller;
-		this->SendDataToDevice(&command);
-		delay(10);
-		CheckSerial(&Serial1, hardwareType.puller);
-
-		//delay(10); //wait for puller to finish reporting back before switching
-		command = {0};
-		command.command = "InnerOffset";
-		command.hardwareType = hardwareType.traverse;
+		//SerialCommand command = {0};
+		//command.command = "velocity";
+		//command.hardwareType = hardwareType.puller;
 		//this->SendDataToDevice(&command);
-		CheckSerial(&Serial1, hardwareType.traverse); //force expander to switch to channel 3
-		this->SendDataToDevice(&command);
-		
-		command = {0};
-		command.command = "SpoolWidth";
-		command.hardwareType = hardwareType.traverse;
-		this->SendDataToDevice(&command);
-		CheckSerial(&Serial1, hardwareType.traverse);
-		
-		command = {0};
-		command.command = "RunMode";
-		command.hardwareType = hardwareType.traverse;
-		this->SendDataToDevice(&command);
-		CheckSerial(&Serial1, hardwareType.traverse);
-
+		//delay(10);
+		//CheckSerial(&Serial1, hardwareType.puller);
+//
+		////delay(10); //wait for puller to finish reporting back before switching
+		//command = {0};
+		//command.command = "InnerOffset";
+		//command.hardwareType = hardwareType.traverse;
+		////this->SendDataToDevice(&command);
+		//CheckSerial(&Serial1, hardwareType.traverse); //force expander to switch to channel 3
+		//this->SendDataToDevice(&command);
+		//
+		//command = {0};
+		//command.command = "SpoolWidth";
+		//command.hardwareType = hardwareType.traverse;
+		//this->SendDataToDevice(&command);
+		//CheckSerial(&Serial1, hardwareType.traverse);
+		//
+		//command = {0};
+		//command.command = "RunMode";
+		//command.hardwareType = hardwareType.traverse;
+		//this->SendDataToDevice(&command);
+		//CheckSerial(&Serial1, hardwareType.traverse);
+//
 	}
 	if(sCommand->hardwareType == hardwareType.internal)
 	{
@@ -264,14 +269,6 @@ unsigned int SerialProcessing::ProcessDataFromPC(SerialCommand *sCommand)
 	}
 
 	this->SendDataToDevice(sCommand);
-
-	//if((sCommand->hardwareType > hardwareType.indicator) && (sCommand->hardwareType < hardwareType.screen))
-	//{
-	////serialPortExpander.channel
-	//serialPortExpander.ProcessSerialExpander(sCommand);
-	//}
-
-	
 
 	return 1;
 }
@@ -321,11 +318,8 @@ void SerialProcessing::CheckInteralCommands(SerialCommand *sCommand)
 	//Serial.println("sim mode routine");
 	if (strcmp(sCommand->command, "IsInSimulationMode") == 0)
 	{
-
 		SIMULATIONACTIVE = strcmp(sCommand->value, "true") == 0;
 	}
-
-
 }
 
 
@@ -351,190 +345,6 @@ void SerialProcessing::str_replace(char src[MAX_CMD_LENGTH], char *oldchars, cha
 		}
 	} while (p && (p = strstr(src, oldchars)));
 }
-
-
-
-
-
-
-
-
-//void SerialProcessing::CheckSerialCommands()
-//{
-//if (Serial.available() > 0 )
-//{
-//SerialCommand sCommand;
-////char *usbData = CheckSerial(&Serial);
-//CheckSerial(&Serial);
-////sCommand = GetSerialArgs(usbData);
-//
-//
-//if(sCommand.hardwareType == hardwareType.internal)
-//{
-//this->CheckInteralCommands(&sCommand);
-//}
-//
-//if(sCommand.hardwareType == hardwareType.spooler)
-//{
-//this->CheckSpoolerCommands(&sCommand);
-//}
-//
-//if((sCommand.hardwareType > hardwareType.indicator) && (sCommand.hardwareType < hardwareType.internal))
-//{
-////serialPortExpander.channel
-//serialPortExpander.ProcessSerialExpander(&sCommand);
-//}
-//
-//
-//
-//
-//
-//
-////if (!SIMULATIONACTIVE)
-////{
-////
-////char * serialData = CheckSerial(&Serial);
-////if (strlen(serialData) > 1)
-////{
-////Serial.print(sCommand.hardwareType);
-////Serial.print(";");
-////Serial.print(sCommand.command);
-////Serial.println(";");
-////Serial.println(sCommand.value);
-////}
-////}
-//}
-//
-//if (Serial1.available() > 0)
-//{
-//
-//}
-//}
-
-
-
-//void SerialProcessing::CheckSpoolerCommands(SerialCommand *sCommand)
-//{
-//
-//if (SIMULATIONACTIVE){
-//if (startsWith("getrpm", sCommand->command))
-//{
-//PrintRandomRPMData();
-//}
-//}
-//else
-//{
-////Serial.print(sCommand->hardwareType);
-////Serial.print(";");
-////Serial.print(sCommand->command);
-////Serial.println(";");
-////Serial.println(sCommand->value);
-//}
-//
-//}
-
-
-
-
-
-
-//int SerialProcessing::strcicmp(char const *a, char const *b)
-//{
-//for (;; a++, b++) {
-//int d = tolower(*a) - tolower(*b);
-//if (d != 0 || !*a)
-//return d;
-//}
-//}
-
-//char *SerialProcessing::GetSerialOutputBuffer(void)
-//{
-//newData = false;
-//return serialOutputBuffer;
-//}
-
-
-//char * CleaneData(char *data)
-//{
-//char endMarker = 0x00; //null character
-//boolean newData = false;
-//char *chars2 = (char*)malloc(numChars);
-//char chars[numChars] = {};
-//
-//for (byte i = 0; i < numChars; i++)
-//{
-//if (data[i] != endMarker && newData == false )
-//{
-//
-//if (data[i] != 0x0A)
-//{
-//chars[i] = data[i];
-//}
-//else
-//{
-//chars[i] = 0x20;
-//}
-//}
-//
-//else
-//{
-//i = 0;
-//chars2 = chars;
-////Serial.println(chars2);
-//newData = true;
-//return chars2;
-//}
-//}
-//
-//return chars2;
-//}
-
-
-
-
-//SerialCommand GetSerialArgs(char *serialData)
-//{
-//SerialCommand c;
-//char delim[] = ";";
-//char *ptr = strtok(serialData, delim);
-//uint16_t loopCounter = 0;
-//char *splitStrings[10] = {NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL};
-//
-//while(ptr != NULL)
-//{
-//if (loopCounter <= 10){ splitStrings[loopCounter] = ptr;}
-//ptr = strtok(NULL, delim);
-//loopCounter++;
-//}
-////for (int i = loopCounter; i < 10; i++)
-////{
-////splitStrings[i] = NULL; //null out rest of point array
-////}
-//
-//if (!ExistsInIntArray(int_hardwareTypes, array_size(int_hardwareTypes), atoi(splitStrings[0]))){return c;}
-//
-//
-//c.hardwareType = atoi(splitStrings[0]);
-//c.command = splitStrings[1];
-//c.value = splitStrings[2];
-//
-//return c;
-//
-//}
-
-//bool ExistsInIntArray(uint16_t *arrayToCheck, size_t arraySize, uint16_t numberToCheck)
-//{
-//
-//
-//for (unsigned int i = 0; i < arraySize; i++)
-//{
-//if (arrayToCheck[i] == numberToCheck)
-//{
-//return true;
-//}
-//}
-//return false;
-//}
 
 void BuildSerialOutput(SerialCommand *sCommand, char *outputBuffer)
 {

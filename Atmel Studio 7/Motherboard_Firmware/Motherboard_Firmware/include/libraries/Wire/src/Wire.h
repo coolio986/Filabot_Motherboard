@@ -53,6 +53,7 @@ public:
 	virtual size_t write(const uint8_t *, size_t);
 	virtual int available(void);
 	virtual int read(void);
+	virtual int readb(char *c, size_t length);
 	virtual int peek(void);
 	virtual void flush(void);
 	void onReceive(void(*)(int));

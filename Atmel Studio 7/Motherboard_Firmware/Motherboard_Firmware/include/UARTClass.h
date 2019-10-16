@@ -51,6 +51,7 @@ class UARTClass : public HardwareSerial
     int availableForWrite(void);
     int peek(void);
     int read(void);
+    int readb(char *c, size_t length);
     void flush(void);
     size_t write(const uint8_t c);
     using Print::write; // pull in write(str) and write(buf, size) from Print

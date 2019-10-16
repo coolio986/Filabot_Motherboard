@@ -42,7 +42,7 @@ void SerialPortExpander::init(void)
 
 void SerialPortExpander::ProcessSerialExpander(SerialCommand *sCommand)
 {
-	Open_channel(sCommand);
+	
 
 	char charBuilder[MAX_CMD_LENGTH] = {0};
 	
@@ -70,6 +70,7 @@ void SerialPortExpander::ProcessSerialExpander(SerialCommand *sCommand)
 
 	//BUILD_SERIAL_OUTPUT(sCommand, charBuilder);
 	//Serial1.println(charBuilder);
+	Open_channel(sCommand);
 	Serial1.write(charBuilder);
 	//Serial1.write("\n");
 	Serial1.flush();

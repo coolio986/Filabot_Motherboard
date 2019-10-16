@@ -44,7 +44,7 @@ void SpcProcessing::init(void)
 {
 	pinMode(INDICATOR_REQ, OUTPUT);
 	pinMode(INDICATOR_CLK, INPUT_PULLUP);
-	pinMode(INDICATOR_DAT, INPUT);
+	pinMode(INDICATOR_DAT, INPUT_PULLUP);
 
 	
 	//attachInterrupt(digitalPinToInterrupt(INDICATOR_CLK), ISR_SPC, FALLING);
@@ -54,13 +54,13 @@ void SpcProcessing::init(void)
 
 void ISR_SPC()
 {
-	
 	rawSPC_ISR[ISR_LOOP_COUNTER++] = digitalRead(INDICATOR_DAT) == 0 ? 48 : 49;
 	
 	if (ISR_LOOP_COUNTER >= 52) //there can only be 52 bits to the spc data
 	{
 		detachInterrupt(digitalPinToInterrupt(INDICATOR_CLK)); //dump the interrupt to stop anymore triggering
 		digitalWrite(INDICATOR_REQ, LOW);
+		
 		
 		for (int i = 0; i < 52; i++)
 		{
@@ -117,7 +117,7 @@ void SpcProcessing::RunSPCDataLoop(void)
 
 				char sErrorOutput [MAX_CMD_LENGTH] = {0};
 				BuildSerialOutput(&sError, sErrorOutput);
-				//SerialNative.println(sErrorOutput);
+				SerialNative.println(sErrorOutput);
 				SPCDiameter = 0.00;
 				ISR_LOOP_COUNTER = 0;
 				break;
@@ -147,7 +147,7 @@ void SpcProcessing::RunSPCDataLoop(void)
 			}
 			
 			float preDecimalNumber = 0.0;
-			char buf[7];
+			char buf[7] = {0};
 			
 			for(int i=0;i<6;i++){ //grab array positions 5-10 for diameter numbers
 				
@@ -190,9 +190,10 @@ void SpcProcessing::RunSPCDataLoop(void)
 
 			for (int i = 0; i < 52; i++) //clean up array for next go around, cannot use memset since rawSPC is volatile
 			{
+				//SerialNative.print(rawSPC[i] == 48 ? "0" : "1");
 				rawSPC[i] = 0;
 			}
-			
+			//SerialNative.println("");
 			
 			MAIN_LOOP_COUNTER = 0;
 			ISR_LOOP_COUNTER = 0;
@@ -276,13 +277,7 @@ bool SpcProcessing::ISR_READY(void)
 void SpcProcessing::StartQuery(void)
 {
 
-if (millis() > debugTime + 5000)
-{
-	
-	
-	//SerialNative.println("Number of errors: %d", numberErrors);
-	debugTime = millis();
-} //TODO debug code remove when done testing
+ //TODO debug code remove when done testing
 	
 	SPC_ISR_LOCK = true; //lock ISR so main program loop doesn't interrupt
 	attachInterrupt(digitalPinToInterrupt(INDICATOR_CLK), ISR_SPC, FALLING);

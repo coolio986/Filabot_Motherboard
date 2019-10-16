@@ -36,13 +36,14 @@
 
 
 // ***** TASKS **** //
-//#define TASKSCREEN
-#define TASKSPC
-#define TASKSERIALCOMMANDS
-//#define TASKPULLER
-#define TASKSPOOL
-//#define TASKTRAVERSE
-#define ENCODER
+//#define TASKSENDTOSCREEN
+#define TASKCHECKSPC
+#define TASKCHECKSERIALCOMMANDS
+//#define TASKGETPULLERRPM
+#define TASKGETSPOOLRPM
+//#define TASKUPDATETRAVERSE
+#define TASKCHECKENCODER
+#define TASKGETFULLUPDATE
 // ***** TASKS **** //
 
 
@@ -64,6 +65,7 @@ void TaskGetPullerRPM (void *pvParameters);
 void TaskGetSpoolRPM (void *pvParameters);
 void TaskUpdateTraverse (void *pvParameters);
 void TaskCheckEncoder (void *pvParameters);
+void TaskGetFullUpdate (void *pvParameters);
 void checkSPC();
 // **** PROTOTYPES **** //
 
@@ -86,7 +88,7 @@ Screen screen;
 SerialProcessing serialProcessing;
 SemaphoreHandle_t xSemaphore = NULL;
 Adafruit_ADS1115 ads;  /* Use this for the 16-bit version */
-#ifdef ENCODER
+#ifdef TASKCHECKENCODER
 Encoder screenEncoder(ENCODER_PINA, ENCODER_PINB);
 #endif
 // ***** CLASS DECLARATIONs **** //
@@ -95,21 +97,11 @@ Encoder screenEncoder(ENCODER_PINA, ENCODER_PINB);
 float pullerRPM = 0;
 int32_t previousEncoderValue = 0;
 unsigned long previousMillis = 834000;
-int toggle = 0;
+unsigned int fullUpdateCounter = 0;
 
 
 void setup()
 {
-	
-	
-	
-	//int usbConnectionRetries = 10;
-	//while (!SerialNative && usbConnectionRetries > 0)
-	//{
-	//delay(100);
-	//usbConnectionRetries--;
-	//}
-	//if (usbConnectionRetries > 0){
 	SerialNative.begin(SERIAL_BAUD); //using native serial rather than programming port on DUE
 	SerialNative.setTimeout(1);
 
@@ -137,7 +129,7 @@ void setup()
 	
 	
 
-	#ifdef TASKSCREEN
+	#ifdef TASKSENDTOSCREEN
 	xTaskCreate(
 	TaskSendToScreen
 	,  (const portCHAR *)"SendToScreen"   // A name just for humans
@@ -147,7 +139,7 @@ void setup()
 	,  NULL );
 	#endif
 
-	#ifdef TASKSPC
+	#ifdef TASKCHECKSPC
 	xTaskCreate(
 	TaskCheckSPC
 	,  (const portCHAR *)"CheckSPC"   // A name just for humans
@@ -157,7 +149,7 @@ void setup()
 	,  NULL );
 	#endif
 	
-	#ifdef TASKSERIALCOMMANDS
+	#ifdef TASKCHECKSERIALCOMMANDS
 	xTaskCreate(
 	TaskCheckSerialCommands
 	,  (const portCHAR *)"CheckSerialCommands"   // A name just for humans
@@ -167,7 +159,7 @@ void setup()
 	,  NULL );
 	#endif
 
-	#ifdef TASKPULLER
+	#ifdef TASKGETPULLERRPM
 	xTaskCreate(
 	TaskGetPullerRPM
 	,  (const portCHAR *)"GetPullerRPM"   // A name just for humans
@@ -177,7 +169,7 @@ void setup()
 	,  NULL );
 	#endif
 
-	#ifdef TASKSPOOL
+	#ifdef TASKGETSPOOLRPM
 	xTaskCreate(
 	TaskGetSpoolRPM
 	,  (const portCHAR *)"GetSpoolRPM"   // A name just for humans
@@ -187,7 +179,7 @@ void setup()
 	,  NULL );
 	#endif
 
-	#ifdef TASKTRAVERSE
+	#ifdef TASKUPDATETRAVERSE
 	xTaskCreate(
 	TaskUpdateTraverse
 	,  (const portCHAR *)"UpdateTraverse"   // A name just for humans
@@ -197,10 +189,20 @@ void setup()
 	,  NULL );
 	#endif
 
-	#ifdef ENCODER
+	#ifdef TASKCHECKENCODER
 	xTaskCreate(
 	TaskCheckEncoder
 	,  (const portCHAR *)"CheckEncoder"   // A name just for humans
+	,  500  // This stack size can be checked & adjusted by reading the Stack Highwater
+	,  NULL
+	,  2  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
+	,  NULL );
+	#endif
+	
+	#ifdef TASKGETFULLUPDATE
+	xTaskCreate(
+	TaskGetFullUpdate
+	,  (const portCHAR *)"GetFullUpdate"   // A name just for humans
 	,  500  // This stack size can be checked & adjusted by reading the Stack Highwater
 	,  NULL
 	,  2  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
@@ -390,7 +392,9 @@ void TaskGetSpoolRPM(void *pvParameters)  // This is a task.
 			serialCommand.hardwareType = hardwareType.traverse;
 			serialCommand.value = NULL;
 			
+			if (!serialProcessing.FullUpdateRequested){
 			serialProcessing.SendDataToDevice(&serialCommand);
+			}
 			
 			xSemaphoreGive(xSemaphore);
 			vTaskDelayUntil( &xLastWakeTime, 500);
@@ -438,7 +442,7 @@ void TaskCheckEncoder(void *pvParameters)  // This is a task.
 			TickType_t xLastWakeTime;
 			xLastWakeTime = xTaskGetTickCount();
 
-			#ifdef ENCODER
+			#ifdef TASKCHECKENCODER
 			//SerialNative.println(screenEncoder.read());
 			int32_t encoderValue = screenEncoder.read();
 			if (previousEncoderValue != encoderValue)
@@ -464,6 +468,8 @@ void TaskCheckEncoder(void *pvParameters)  // This is a task.
 				CONVERT_NUMBER_TO_STRING(INT_FORMAT, abs(encoderValue - previousEncoderValue), value);
 				
 				sCommand.value = value;
+				
+				
 				serialProcessing.SendDataToDevice(&sCommand);
 				
 				previousEncoderValue = encoderValue;
@@ -471,6 +477,67 @@ void TaskCheckEncoder(void *pvParameters)  // This is a task.
 			
 			#endif
 
+			xSemaphoreGive(xSemaphore);
+			vTaskDelayUntil( &xLastWakeTime, 50);
+		}
+
+		
+	}
+
+}
+
+void TaskGetFullUpdate(void *pvParameters)  // This is a task.
+{
+	while(1) // A Task shall never return or exit.
+	{
+		if ( xSemaphoreTake( xSemaphore, ( TickType_t ) 10 ) == pdTRUE )
+		{
+			TickType_t xLastWakeTime;
+			xLastWakeTime = xTaskGetTickCount();
+			if (serialProcessing.FullUpdateRequested)
+			{
+				SerialCommand command = {0};
+				
+				switch(fullUpdateCounter)
+				{
+					
+					case 0:
+						command.command = "velocity";
+						command.hardwareType = hardwareType.puller;
+						serialProcessing.SendDataToDevice(&command);
+						fullUpdateCounter++;
+						//vTaskDelay(50);
+						break;
+					case 1:
+						command.command = "InnerOffset";
+						command.hardwareType = hardwareType.traverse;
+						serialProcessing.SendDataToDevice(&command);
+						fullUpdateCounter++;
+						//vTaskDelay(50);
+						break;
+					case 2:
+						command.command = "SpoolWidth";
+						command.hardwareType = hardwareType.traverse;
+						serialProcessing.SendDataToDevice(&command);
+						fullUpdateCounter++;
+						//vTaskDelay(10);
+						break;
+					case 3:
+						command.command = "RunMode";
+						command.hardwareType = hardwareType.traverse;
+						serialProcessing.SendDataToDevice(&command);
+						fullUpdateCounter++;
+						fullUpdateCounter = 0;
+						serialProcessing.FullUpdateRequested = false;
+						//vTaskDelay(10);
+						break;
+					default:
+						fullUpdateCounter = 0;
+						serialProcessing.FullUpdateRequested = false;
+				}
+				
+			}
+			
 			xSemaphoreGive(xSemaphore);
 			vTaskDelayUntil( &xLastWakeTime, 50);
 		}

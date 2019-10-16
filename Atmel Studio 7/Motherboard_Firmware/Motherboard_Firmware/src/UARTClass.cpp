@@ -134,6 +134,11 @@ int UARTClass::read( void )
   return uc;
 }
 
+int UARTClass::readb(char *c, size_t length)
+{
+	return 0;
+}
+
 void UARTClass::flush( void )
 {
   while (_tx_buffer->_iHead != _tx_buffer->_iTail); //wait for transmit data to be sent
