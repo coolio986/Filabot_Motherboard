@@ -44,6 +44,7 @@
 //#define TASKUPDATETRAVERSE
 #define TASKCHECKENCODER
 #define TASKGETFULLUPDATE
+#define TASKFILAMENTCAPTURE
 // ***** TASKS **** //
 
 
@@ -66,6 +67,7 @@ void TaskGetSpoolRPM (void *pvParameters);
 void TaskUpdateTraverse (void *pvParameters);
 void TaskCheckEncoder (void *pvParameters);
 void TaskGetFullUpdate (void *pvParameters);
+void TaskFilamentCapture (void *pvParameters);
 void checkSPC();
 // **** PROTOTYPES **** //
 
@@ -98,6 +100,7 @@ float pullerRPM = 0;
 int32_t previousEncoderValue = 0;
 unsigned long previousMillis = 834000;
 unsigned int fullUpdateCounter = 0;
+bool previousCaptureState = false;
 
 
 void setup()
@@ -203,7 +206,17 @@ void setup()
 	xTaskCreate(
 	TaskGetFullUpdate
 	,  (const portCHAR *)"GetFullUpdate"   // A name just for humans
-	,  500  // This stack size can be checked & adjusted by reading the Stack Highwater
+	,  250  // This stack size can be checked & adjusted by reading the Stack Highwater
+	,  NULL
+	,  2  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
+	,  NULL );
+	#endif
+
+	#ifdef TASKFILAMENTCAPTURE
+	xTaskCreate(
+	TaskFilamentCapture
+	,  (const portCHAR *)"FilamentCapture"   // A name just for humans
+	,  250  // This stack size can be checked & adjusted by reading the Stack Highwater
 	,  NULL
 	,  2  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
 	,  NULL );
@@ -527,8 +540,15 @@ void TaskGetFullUpdate(void *pvParameters)  // This is a task.
 						command.hardwareType = hardwareType.traverse;
 						serialProcessing.SendDataToDevice(&command);
 						fullUpdateCounter++;
-						fullUpdateCounter = 0;
-						serialProcessing.FullUpdateRequested = false;
+						//vTaskDelay(10);
+						break;
+					case 4:
+						command.command = "StartPosition";
+						command.hardwareType = hardwareType.traverse;
+						serialProcessing.SendDataToDevice(&command);
+						fullUpdateCounter++;
+						//fullUpdateCounter = 0;
+						//serialProcessing.FullUpdateRequested = false;
 						//vTaskDelay(10);
 						break;
 					default:
@@ -547,7 +567,35 @@ void TaskGetFullUpdate(void *pvParameters)  // This is a task.
 
 }
 
+void TaskFilamentCapture(void *pvParameters)  // This is a task.
+{
+	while(1) // A Task shall never return or exit.
+	{
+		if ( xSemaphoreTake( xSemaphore, ( TickType_t ) 10 ) == pdTRUE )
+		{
+			TickType_t xLastWakeTime;
+			xLastWakeTime = xTaskGetTickCount();
 
+			if (previousCaptureState != serialProcessing.FilamentCapture )
+			{
+				char value[MAX_CMD_LENGTH] = {0};
+				CONVERT_NUMBER_TO_STRING(STRING_FORMAT, serialProcessing.FilamentCapture == true ? "1" : "0", value); 
+				SerialCommand command = {0};
+				command.command = "FilamentCapture";
+				command.hardwareType = hardwareType.traverse;
+				command.value = value;
+				serialProcessing.SendDataToDevice(&command);
+				previousCaptureState = serialProcessing.FilamentCapture;
+			}
+			
+			xSemaphoreGive(xSemaphore);
+			vTaskDelayUntil( &xLastWakeTime, 50);
+		}
+
+		
+	}
+
+}
 
 
 

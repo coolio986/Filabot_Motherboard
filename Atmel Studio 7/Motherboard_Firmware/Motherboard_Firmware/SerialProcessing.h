@@ -30,6 +30,7 @@ class SerialProcessing {
 	bool newData = false;
 	bool commandActive;
 	bool FullUpdateRequested;
+	bool FilamentCapture;
 
 
 

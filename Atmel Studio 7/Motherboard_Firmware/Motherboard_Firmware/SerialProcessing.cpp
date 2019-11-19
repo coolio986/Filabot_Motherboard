@@ -229,39 +229,15 @@ unsigned int SerialProcessing::CommandParse(SerialCommand *sCommand, char str[MA
 
 unsigned int SerialProcessing::ProcessDataFromPC(SerialCommand *sCommand)
 {
-	int cmp = strcmp(sCommand->command, "GetFullUpdate");
+	//int cmp = strcmp(sCommand->command, "GetFullUpdate");
 
-	if ( cmp == 0 && sCommand->hardwareType == hardwareType.internal)
+	if ( strcmp(sCommand->command, "GetFullUpdate") == 0 && sCommand->hardwareType == hardwareType.internal)
 	{
 		FullUpdateRequested = true;
-		
-		//SerialCommand command = {0};
-		//command.command = "velocity";
-		//command.hardwareType = hardwareType.puller;
-		//this->SendDataToDevice(&command);
-		//delay(10);
-		//CheckSerial(&Serial1, hardwareType.puller);
-//
-		////delay(10); //wait for puller to finish reporting back before switching
-		//command = {0};
-		//command.command = "InnerOffset";
-		//command.hardwareType = hardwareType.traverse;
-		////this->SendDataToDevice(&command);
-		//CheckSerial(&Serial1, hardwareType.traverse); //force expander to switch to channel 3
-		//this->SendDataToDevice(&command);
-		//
-		//command = {0};
-		//command.command = "SpoolWidth";
-		//command.hardwareType = hardwareType.traverse;
-		//this->SendDataToDevice(&command);
-		//CheckSerial(&Serial1, hardwareType.traverse);
-		//
-		//command = {0};
-		//command.command = "RunMode";
-		//command.hardwareType = hardwareType.traverse;
-		//this->SendDataToDevice(&command);
-		//CheckSerial(&Serial1, hardwareType.traverse);
-//
+	}
+	if ( strcmp(sCommand->command, "FilamentCapture") == 0 && sCommand->hardwareType == hardwareType.internal)
+	{
+		FilamentCapture = strcmp(sCommand->value, "1") == 0 ? true : false;
 	}
 	if(sCommand->hardwareType == hardwareType.internal)
 	{
