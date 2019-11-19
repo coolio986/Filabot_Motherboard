@@ -14,6 +14,7 @@
 #include "Error.h"
 #include "Structs.h"
 
+
 SpcProcessing *SpcProcessing::firstinstance;
 
 void ISR_SPC();
@@ -38,13 +39,14 @@ volatile char rawSPC_ISR[53] = {0};
 volatile int ISR_LOOP_COUNTER = 0;
 volatile int MAIN_LOOP_COUNTER = 0;
 volatile char rawSPC[53] = {0};
+int previousQuery = 0;
 
 
 void SpcProcessing::init(void)
 {
 	pinMode(INDICATOR_REQ, OUTPUT);
 	pinMode(INDICATOR_CLK, INPUT_PULLUP);
-	pinMode(INDICATOR_DAT, INPUT);
+	pinMode(INDICATOR_DAT, INPUT_PULLUP);
 
 	
 	//attachInterrupt(digitalPinToInterrupt(INDICATOR_CLK), ISR_SPC, FALLING);
@@ -54,13 +56,13 @@ void SpcProcessing::init(void)
 
 void ISR_SPC()
 {
-	
+	delayMicroseconds(50);
 	rawSPC_ISR[ISR_LOOP_COUNTER++] = digitalRead(INDICATOR_DAT) == 0 ? 48 : 49;
-	
+	//digitalWrite(INDICATOR_REQ, HIGH);
 	if (ISR_LOOP_COUNTER >= 52) //there can only be 52 bits to the spc data
 	{
 		detachInterrupt(digitalPinToInterrupt(INDICATOR_CLK)); //dump the interrupt to stop anymore triggering
-		digitalWrite(INDICATOR_REQ, LOW);
+		//digitalWrite(INDICATOR_REQ, LOW);
 		
 		for (int i = 0; i < 52; i++)
 		{
@@ -132,8 +134,8 @@ void SpcProcessing::RunSPCDataLoop(void)
 		{
 			
 
-			ClearError(errorCode.diameter_device_disconnected); 
-			ClearError(errorCode.spc_data_error); 
+			ClearError(errorCode.diameter_device_disconnected);
+			ClearError(errorCode.spc_data_error);
 			byte bytes[13] = {0};
 			for (int i = 0; i < 13; i++)
 			{
@@ -196,6 +198,7 @@ void SpcProcessing::RunSPCDataLoop(void)
 			
 			MAIN_LOOP_COUNTER = 0;
 			ISR_LOOP_COUNTER = 0;
+			previousQuery = millis();
 		}
 
 	}
@@ -222,7 +225,7 @@ int SpcProcessing::GetLoopCounts(void)
 
 bool SpcProcessing::QueryFailed(void)
 {
-	if (GetLoopCounts() > 60000) //50000 ticks before a failure is recorded (maybe time base is better?) need to measure time between routine to test time base
+	if (millis() >= previousQuery + 200) //100 milliseconds //if previous query didn't finish in time it is dead
 	{
 		StopQuery();
 		//SerialNative.println("Query Error");
@@ -230,9 +233,24 @@ bool SpcProcessing::QueryFailed(void)
 		eError.errorLevel = errorLevel.device_disconnected;
 		eError.errorCode = errorCode.diameter_device_disconnected;
 		AddError(&eError);
+		previousQuery = millis();
 		
 		return true;
 	}
+
+	
+	//if (GetLoopCounts() > 60000) //50000 ticks before a failure is recorded (maybe time base is better?) need to measure time between routine to test time base
+	//{
+	//
+	//StopQuery();
+	////SerialNative.println("Query Error");
+	//eError.hardwareType = hardwareType.indicator;
+	//eError.errorLevel = errorLevel.device_disconnected;
+	//eError.errorCode = errorCode.diameter_device_disconnected;
+	//AddError(&eError);
+	//
+	//return true;
+	//}
 	return false;
 }
 
@@ -276,25 +294,25 @@ bool SpcProcessing::ISR_READY(void)
 void SpcProcessing::StartQuery(void)
 {
 
-if (millis() > debugTime + 5000)
-{
-	
-	
-	//SerialNative.println("Number of errors: %d", numberErrors);
-	debugTime = millis();
-} //TODO debug code remove when done testing
+	if (millis() > debugTime + 5000)
+	{
+		
+		
+		//SerialNative.println("Number of errors: %d", numberErrors);
+		debugTime = millis();
+	} //TODO debug code remove when done testing
 	
 	SPC_ISR_LOCK = true; //lock ISR so main program loop doesn't interrupt
-	attachInterrupt(digitalPinToInterrupt(INDICATOR_CLK), ISR_SPC, FALLING);
+	attachInterrupt(digitalPinToInterrupt(INDICATOR_CLK), ISR_SPC, RISING);
 	//for (int i = 0; i < 10; i++){
-	delay(2); //this delay lengthens the inverted low pulse to the SPC stream. 2ms is the minimum time for the SPC to initiate the clock signal properly, maybe a timer is better?
+	delayMicroseconds(150); //this delay lengthens the inverted low pulse to the SPC stream. 2ms is the minimum time for the SPC to initiate the clock signal properly, maybe a timer is better?
 	
 	//}
 	ISR_LOOP_COUNTER = 0;
 	MAIN_LOOP_COUNTER = 0;
 	
 	HasNewData = false;
-	digitalWrite(INDICATOR_REQ, HIGH); //sets output high, inverted low on the SPC
+	digitalWrite(INDICATOR_REQ, LOW); //sets output high, inverted low on the SPC
 	
 }
 
@@ -302,7 +320,7 @@ void SpcProcessing::StopQuery(void)
 {
 	detachInterrupt(digitalPinToInterrupt(INDICATOR_CLK)); //kill interrupt
 	
-	digitalWrite(INDICATOR_REQ, LOW); 
+	digitalWrite(INDICATOR_REQ, HIGH);
 }
 
 
