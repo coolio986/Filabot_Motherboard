@@ -23,9 +23,6 @@
 
 #include "RingBuffer.h"
 #include "Stream.h"
-#include <cstddef>
-
-#define min(a, b)   Min(a, b)
 
 //================================================================================
 //================================================================================
@@ -57,7 +54,6 @@ public:
 	void end(void);
 
 	virtual int available(void);
-	virtual int availableForWrite(void);
 	virtual void accept(void);
 	virtual int peek(void);
 	virtual int read(void);

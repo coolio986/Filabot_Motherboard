@@ -27,7 +27,7 @@
 
 #define PARSE_TIMEOUT 1000  // default number of milli-seconds to wait
 
-// protected method to read stream with timeout
+// private method to read stream with timeout
 int Stream::timedRead()
 {
   int c;
@@ -39,7 +39,7 @@ int Stream::timedRead()
   return -1;     // -1 indicates timeout
 }
 
-// protected method to peek stream with timeout
+// private method to peek stream with timeout
 int Stream::timedPeek()
 {
   int c;
@@ -201,28 +201,21 @@ float Stream::parseFloat(LookaheadMode lookahead, char ignore)
 //
 size_t Stream::readBytes(char *buffer, size_t length)
 {
-	size_t count = 0;
-	while (count < length) {
-		int c = timedRead();
-		if (c < 0) break;
-		*buffer++ = (char)c;
-		count++;
-	}
-	return count;
+  size_t count = 0;
+  while (count < length) {
+    int c = timedRead();
+    if (c < 0) break;
+    *buffer++ = (char)c;
+    count++;
+  }
+  return count;
 }
 
-// the same as readBytes only super fast
 size_t Stream::readBlock(char *buffer, size_t length)
 {
-	size_t count = 0;
-	int n;
-	_startMillis = millis();
-	while (count < length && millis() - _startMillis < _timeout) {
-		n = SerialUSB.readb(buffer+count, length-count);
-		count += (size_t)n;
-		if (n) _startMillis = millis();
-	}
-	return count;
+  size_t count = 0;
+  count=readb(buffer, length);
+  return count;
 }
 
 

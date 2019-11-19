@@ -285,6 +285,12 @@ int TwoWire::read(void) {
 	return -1;
 }
 
+int TwoWire::readb(char *c, size_t length) {
+	
+	return -1;
+}
+
+
 int TwoWire::peek(void) {
 	if (rxBufferIndex < rxBufferLength)
 		return rxBuffer[rxBufferIndex];

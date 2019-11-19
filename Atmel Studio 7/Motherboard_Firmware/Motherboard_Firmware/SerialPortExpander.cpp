@@ -42,13 +42,9 @@ void SerialPortExpander::init(void)
 
 void SerialPortExpander::ProcessSerialExpander(SerialCommand *sCommand)
 {
-
-	Open_channel(sCommand);
-	//Serial.print(sCommand->hardwareType ";");
 	
 
 	char charBuilder[MAX_CMD_LENGTH] = {0};
-	
 	
 	if (sCommand->hardwareType == hardwareType.puller)
 	{
@@ -69,12 +65,12 @@ void SerialPortExpander::ProcessSerialExpander(SerialCommand *sCommand)
 		sprintf(charBuilder, "%s%s", charBuilder, "\n");
 	}
 	
-
 	//SerialNative.println("serial 1 out run");
 
 
 	//BUILD_SERIAL_OUTPUT(sCommand, charBuilder);
 	//Serial1.println(charBuilder);
+	Open_channel(sCommand);
 	Serial1.write(charBuilder);
 	//Serial1.write("\n");
 	Serial1.flush();
