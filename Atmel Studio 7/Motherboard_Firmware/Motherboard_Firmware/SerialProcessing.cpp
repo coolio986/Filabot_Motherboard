@@ -45,7 +45,7 @@ void SerialProcessing::Poll(void)
 
 }
 
-unsigned int SerialProcessing::CheckSerial(_SerialNative *port, int portNumber) //experimental
+unsigned int SerialProcessing::CheckSerial(_SerialNative *port, int portNumber)
 {
 	//commandActive = true;
 	char computerdata[MAX_CMD_LENGTH] = {0};

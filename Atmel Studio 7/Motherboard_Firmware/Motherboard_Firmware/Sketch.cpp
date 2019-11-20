@@ -36,12 +36,10 @@
 
 
 // ***** TASKS **** //
-//#define TASKSENDTOSCREEN
 #define TASKCHECKSPC
 #define TASKCHECKSERIALCOMMANDS
-//#define TASKGETPULLERRPM
-#define TASKGETSPOOLRPM
-//#define TASKUPDATETRAVERSE
+#define TASKGETPULLERDATA
+#define TASKGETTRAVERSEDATA
 #define TASKCHECKENCODER
 #define TASKGETFULLUPDATE
 #define TASKFILAMENTCAPTURE
@@ -59,12 +57,10 @@ void PrintRandomRPMData();
 bool startsWith(const char* pre, const char* str);
 void TaskCheckSPC( void *pvParameters );
 void TaskCheckSerialExpander( void *pvParameters );
-void TaskSendToScreen ( void *pvParameters );
 void TaskCheckSerialCommands( void *pvParameters );
 void TaskRunSimulation(void *pvParameters );
-void TaskGetPullerRPM (void *pvParameters);
-void TaskGetSpoolRPM (void *pvParameters);
-void TaskUpdateTraverse (void *pvParameters);
+void TaskGetPullerData (void *pvParameters);
+void TaskGetTraverseData (void *pvParameters);
 void TaskCheckEncoder (void *pvParameters);
 void TaskGetFullUpdate (void *pvParameters);
 void TaskFilamentCapture (void *pvParameters);
@@ -86,12 +82,11 @@ _SerialNative SerialNative;
 // ***** CLASS DECLARATIONs **** //
 SerialCommand sCommand;
 SpcProcessing spcProcessing;
-Screen screen;
 SerialProcessing serialProcessing;
 SemaphoreHandle_t xSemaphore = NULL;
 Adafruit_ADS1115 ads;  /* Use this for the 16-bit version */
 #ifdef TASKCHECKENCODER
-Encoder screenEncoder(ENCODER_PINA, ENCODER_PINB);
+Encoder encoder(ENCODER_PINA, ENCODER_PINB);
 #endif
 // ***** CLASS DECLARATIONs **** //
 
@@ -100,6 +95,8 @@ float pullerRPM = 0;
 int32_t previousEncoderValue = 0;
 unsigned long previousMillis = 834000;
 unsigned int fullUpdateCounter = 0;
+unsigned int traverseDataCounter = 0;
+unsigned int pullerDataCounter = 0;
 bool previousCaptureState = false;
 
 
@@ -117,30 +114,17 @@ void setup()
 
 	//}
 	//SerialUSB.begin(SERIAL_BAUD); //using native serial rather than programming port on DUE
-	Serial3.begin(SERIAL_BAUD); //Serial 3 for communication with external screen ILI9341
+	//Serial3.begin(SERIAL_BAUD); //Serial 3 for communication with external screen ILI9341
 	
 	// **** INITS ***** //
 	spcProcessing.init();
-	screen.init();
+	//screen.init();
 	serialProcessing.init();
 	startErrorHandler();
 	// **** INITS ***** //
 
 	// ***** Instances ***** //
 	xSemaphore = xSemaphoreCreateMutex();
-
-	
-	
-
-	#ifdef TASKSENDTOSCREEN
-	xTaskCreate(
-	TaskSendToScreen
-	,  (const portCHAR *)"SendToScreen"   // A name just for humans
-	,  1500  // This stack size can be checked & adjusted by reading the Stack Highwater
-	,  NULL
-	,   2  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
-	,  NULL );
-	#endif
 
 	#ifdef TASKCHECKSPC
 	xTaskCreate(
@@ -162,31 +146,21 @@ void setup()
 	,  NULL );
 	#endif
 
-	#ifdef TASKGETPULLERRPM
+	#ifdef TASKGETPULLERDATA
 	xTaskCreate(
-	TaskGetPullerRPM
-	,  (const portCHAR *)"GetPullerRPM"   // A name just for humans
-	,  1000  // This stack size can be checked & adjusted by reading the Stack Highwater
+	TaskGetPullerData
+	,  (const portCHAR *)"GetPullerDATA"   // A name just for humans
+	,  250  // This stack size can be checked & adjusted by reading the Stack Highwater
 	,  NULL
-	,  3  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
+	,  2  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
 	,  NULL );
 	#endif
 
-	#ifdef TASKGETSPOOLRPM
+	#ifdef TASKGETTRAVERSEDATA
 	xTaskCreate(
-	TaskGetSpoolRPM
-	,  (const portCHAR *)"GetSpoolRPM"   // A name just for humans
-	,  500  // This stack size can be checked & adjusted by reading the Stack Highwater
-	,  NULL
-	,  3  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
-	,  NULL );
-	#endif
-
-	#ifdef TASKUPDATETRAVERSE
-	xTaskCreate(
-	TaskUpdateTraverse
-	,  (const portCHAR *)"UpdateTraverse"   // A name just for humans
-	,  1000  // This stack size can be checked & adjusted by reading the Stack Highwater
+	TaskGetTraverseData
+	,  (const portCHAR *)"GetTraverseData"   // A name just for humans
+	,  250  // This stack size can be checked & adjusted by reading the Stack Highwater
 	,  NULL
 	,  2  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
 	,  NULL );
@@ -234,67 +208,6 @@ void loop()
 	//nothing to do here, all routines done in tasks
 
 	
-}
-
-
-void TaskSendToScreen(void *pvParameters)  // This is a task.
-{
-	while(1) // A Task shall never return or exit.
-	{
-		if ( xSemaphoreTake( xSemaphore, ( TickType_t ) 10 ) == pdTRUE )
-		{
-			TickType_t xLastWakeTime;
-			xLastWakeTime = xTaskGetTickCount();
-
-			if (spcProcessing.HasError())
-			{
-				screen.SendError(spcProcessing.GetError());  //need to implement later
-			}
-			if (spcProcessing.HasNewData)
-			{
-				//SerialUSB.println(spcProcessing.GetDiameter()->charDiameterWithDecimal); //Serial print is broken using long values, use char instead
-				//SerialCommand _serialCommand;
-				//_serialCommand.hardwareType = hardwareType.screen;
-				//_serialCommand.command = "Diameter";
-				//_serialCommand.value = spcProcessing.GetDiameter()->charDiameterWithDecimal;
-				//char output[MAX_CMD_LENGTH] = {0};
-				//BuildSerialOutput(&_serialCommand, output);
-				//Serial3.println(output);
-				
-				//long running task
-				screen.UpdateDiameter(spcProcessing.GetDiameter());
-				
-			}
-
-
-
-
-			
-			
-
-			//char randomNum[10] = {0};
-			//CONVERT_NUMBER_TO_STRING(INT_FORMAT, random(0, 1000), randomNum); //random for now
-			//Spool spool;
-			//spool.RPM = randomNum;
-
-			//screen.UpdateSpool(&spool);
-			//Puller puller;
-			
-			//char randomNum2[10] = {0};
-
-			//CONVERT_NUMBER_TO_STRING(INT_FORMAT, random(0, 1000), randomNum2); //random for now
-			//puller.RPM = randomNum2;
-			//puller.RPM = "500";
-			
-			//screen.UpdatePuller(&puller);
-			
-
-			xSemaphoreGive(xSemaphore);
-			vTaskDelayUntil( &xLastWakeTime, 50);
-
-		}
-
-	}
 }
 
 void TaskCheckSPC(void *pvParameters)  // This is a task.
@@ -362,7 +275,7 @@ void TaskCheckSerialCommands(void *pvParameters)  // This is a task.
 	}
 }
 
-void TaskGetPullerRPM(void *pvParameters)  // This is a task.
+void TaskGetPullerData(void *pvParameters)  // This is a task.
 {
 	while(1) // A Task shall never return or exit.
 	{
@@ -371,46 +284,41 @@ void TaskGetPullerRPM(void *pvParameters)  // This is a task.
 			TickType_t xLastWakeTime;
 			xLastWakeTime = xTaskGetTickCount();
 
-			SerialCommand serialCommand;
-			serialCommand.command = "getrpm";
-			serialCommand.hardwareType = hardwareType.puller;
-			serialCommand.value = NULL;
+			SerialCommand command = {0};
 			
-			
-			serialProcessing.SendDataToDevice(&serialCommand);
-			//delay(10);
-			//serialProcessing.CheckSerial(&Serial1, serialCommand.hardwareType);
-			
-
-			xSemaphoreGive(xSemaphore);
-			vTaskDelayUntil( &xLastWakeTime, 50);
-		}
-
-		
-	}
-
-}
-
-void TaskGetSpoolRPM(void *pvParameters)  // This is a task.
-{
-	while(1) // A Task shall never return or exit.
-	{
-		if ( xSemaphoreTake( xSemaphore, ( TickType_t ) 10 ) == pdTRUE )
-		{
-			TickType_t xLastWakeTime;
-			xLastWakeTime = xTaskGetTickCount();
-
-			SerialCommand serialCommand = {0};
-			serialCommand.command = "SpoolRPM";
-			serialCommand.hardwareType = hardwareType.traverse;
-			serialCommand.value = NULL;
-			
-			if (!serialProcessing.FullUpdateRequested){
-			serialProcessing.SendDataToDevice(&serialCommand);
+			switch(pullerDataCounter)
+			{
+				case 0:
+				command.command = "velocity";
+				command.hardwareType = hardwareType.puller;
+				command.value = NULL;
+				pullerDataCounter++;
+				break;
+				case 1:
+				command.command = "PullerRPM";
+				command.hardwareType = hardwareType.puller;
+				command.value = NULL;
+				pullerDataCounter++;
+				break;
+				case 2:
+				command.command = "FilamentLength";
+				command.hardwareType = hardwareType.puller;
+				command.value = NULL;
+				pullerDataCounter++;
+				break;
+				default:
+				pullerDataCounter = 0;
+				break;
 			}
 			
+			serialProcessing.SendDataToDevice(&command);
+			//vTaskDelay(10);
+			//delay(50);
+			//serialProcessing.CheckSerial(&Serial1, serialCommand.hardwareType);
+			
+
 			xSemaphoreGive(xSemaphore);
-			vTaskDelayUntil( &xLastWakeTime, 500);
+			vTaskDelayUntil( &xLastWakeTime, 250);
 		}
 
 		
@@ -418,7 +326,7 @@ void TaskGetSpoolRPM(void *pvParameters)  // This is a task.
 
 }
 
-void TaskUpdateTraverse(void *pvParameters)  // This is a task.
+void TaskGetTraverseData(void *pvParameters)  // This is a task.
 {
 	while(1) // A Task shall never return or exit.
 	{
@@ -427,18 +335,35 @@ void TaskUpdateTraverse(void *pvParameters)  // This is a task.
 			TickType_t xLastWakeTime;
 			xLastWakeTime = xTaskGetTickCount();
 
-			SerialCommand serialCommand;
-			serialCommand.command = "SpoolRpm";
-			serialCommand.hardwareType = hardwareType.traverse;
-			serialCommand.value = NULL;
+			SerialCommand command = {0};
 			
-			
-			//serialProcessing.SendDataToDevice(&serialCommand);
-			//serialProcessing.CheckSerial(&Serial1, serialCommand.hardwareType);
-			
-			
+			switch(traverseDataCounter)
+			{
+				case 0:
+				command.command = "SpoolRPM";
+				command.hardwareType = hardwareType.traverse;
+				command.value = NULL;
+				traverseDataCounter++;
+				break;
+
+				case 1:
+				command.command = "SpoolTicks";
+				command.hardwareType = hardwareType.traverse;
+				command.value = NULL;
+				traverseDataCounter++;
+				break;
+
+				default:
+				traverseDataCounter = 0;
+				break;
+			}
+
+			if (!serialProcessing.FullUpdateRequested){
+				serialProcessing.SendDataToDevice(&command);
+			}
+			//vTaskDelay(10);
 			xSemaphoreGive(xSemaphore);
-			vTaskDelayUntil( &xLastWakeTime, 50);
+			vTaskDelayUntil( &xLastWakeTime, 200);
 		}
 
 		
@@ -456,8 +381,8 @@ void TaskCheckEncoder(void *pvParameters)  // This is a task.
 			xLastWakeTime = xTaskGetTickCount();
 
 			#ifdef TASKCHECKENCODER
-			//SerialNative.println(screenEncoder.read());
-			int32_t encoderValue = screenEncoder.read();
+			
+			int32_t encoderValue = encoder.read();
 			if (previousEncoderValue != encoderValue)
 			{
 				
@@ -515,45 +440,44 @@ void TaskGetFullUpdate(void *pvParameters)  // This is a task.
 				{
 					
 					case 0:
-						command.command = "velocity";
-						command.hardwareType = hardwareType.puller;
-						serialProcessing.SendDataToDevice(&command);
-						fullUpdateCounter++;
-						//vTaskDelay(50);
-						break;
+					command.command = "velocity";
+					command.hardwareType = hardwareType.puller;
+					serialProcessing.SendDataToDevice(&command);
+					fullUpdateCounter++;
+					break;
+
 					case 1:
-						command.command = "InnerOffset";
-						command.hardwareType = hardwareType.traverse;
-						serialProcessing.SendDataToDevice(&command);
-						fullUpdateCounter++;
-						//vTaskDelay(50);
-						break;
+					command.command = "InnerOffset";
+					command.hardwareType = hardwareType.traverse;
+					serialProcessing.SendDataToDevice(&command);
+					fullUpdateCounter++;
+					break;
+
 					case 2:
-						command.command = "SpoolWidth";
-						command.hardwareType = hardwareType.traverse;
-						serialProcessing.SendDataToDevice(&command);
-						fullUpdateCounter++;
-						//vTaskDelay(10);
-						break;
+					command.command = "SpoolWidth";
+					command.hardwareType = hardwareType.traverse;
+					serialProcessing.SendDataToDevice(&command);
+					fullUpdateCounter++;
+					break;
+
 					case 3:
-						command.command = "RunMode";
-						command.hardwareType = hardwareType.traverse;
-						serialProcessing.SendDataToDevice(&command);
-						fullUpdateCounter++;
-						//vTaskDelay(10);
-						break;
+					command.command = "RunMode";
+					command.hardwareType = hardwareType.traverse;
+					serialProcessing.SendDataToDevice(&command);
+					fullUpdateCounter++;
+					break;
+
 					case 4:
-						command.command = "StartPosition";
-						command.hardwareType = hardwareType.traverse;
-						serialProcessing.SendDataToDevice(&command);
-						fullUpdateCounter++;
-						//fullUpdateCounter = 0;
-						//serialProcessing.FullUpdateRequested = false;
-						//vTaskDelay(10);
-						break;
+					command.command = "StartPosition";
+					command.hardwareType = hardwareType.traverse;
+					serialProcessing.SendDataToDevice(&command);
+					fullUpdateCounter++;
+					break;
+
 					default:
-						fullUpdateCounter = 0;
-						serialProcessing.FullUpdateRequested = false;
+					fullUpdateCounter = 0;
+					serialProcessing.FullUpdateRequested = false;
+					break;
 				}
 				
 			}
@@ -579,12 +503,17 @@ void TaskFilamentCapture(void *pvParameters)  // This is a task.
 			if (previousCaptureState != serialProcessing.FilamentCapture )
 			{
 				char value[MAX_CMD_LENGTH] = {0};
-				CONVERT_NUMBER_TO_STRING(STRING_FORMAT, serialProcessing.FilamentCapture == true ? "1" : "0", value); 
+				CONVERT_NUMBER_TO_STRING(STRING_FORMAT, serialProcessing.FilamentCapture == true ? "1" : "0", value);
 				SerialCommand command = {0};
 				command.command = "FilamentCapture";
 				command.hardwareType = hardwareType.traverse;
 				command.value = value;
 				serialProcessing.SendDataToDevice(&command);
+
+				
+				command.hardwareType = hardwareType.puller;
+				serialProcessing.SendDataToDevice(&command);
+
 				previousCaptureState = serialProcessing.FilamentCapture;
 			}
 			
