@@ -119,11 +119,6 @@ unsigned int SerialProcessing::CheckSerial(_SerialNative *port, int portNumber)
 
 unsigned int SerialProcessing::CheckSerial(HardwareSerial *port, int portNumber) //check expander ports
 {
-
-	
-
-	//commandActive = true;
-	
 	char computerdata[MAX_CMD_LENGTH] = {0};
 	byte computer_bytes_received = 0;
 
@@ -132,11 +127,7 @@ unsigned int SerialProcessing::CheckSerial(HardwareSerial *port, int portNumber)
 
 	if (port->available() > 0)
 	{
-		
 		computerdata[MAX_CMD_LENGTH] = {0};
-
-		//computer_bytes_received = port->readBytesUntil(10, computerdata, MAX_CMD_LENGTH); //We read the data sent from the serial monitor(pc/mac/other) until we see a <CR>. We also count how many characters have been received
-		//computerdata[computer_bytes_received] = 0; //We add a 0 to the spot in the array just after the last character we received.. This will stop us from transmitting incorrect data that may have been left in the buffer
 		
 		while(port->available() > 0)
 		{
@@ -153,16 +144,11 @@ unsigned int SerialProcessing::CheckSerial(HardwareSerial *port, int portNumber)
 		}
 	}
 
-	//if (computer_bytes_received != 0) {             //If computer_bytes_received does not equal zero
 		if (i != 0) { 
 		CommandParse(&sCommand, computerdata);
 		
 		computer_bytes_received = 0;                  //Reset the var computer_bytes_received to equal 0
 		
-
-		
-
-
 		if (portNumber == 0) //if data comes from USB/PC
 		{
 			ProcessDataFromPC(&sCommand);
@@ -175,10 +161,8 @@ unsigned int SerialProcessing::CheckSerial(HardwareSerial *port, int portNumber)
 				i = 1;
 			}
 			SendToPC(&sCommand);
-			//SendScreenData(&sCommand);
 		}
 	}
-	//commandActive = false;
 	
 
 	return 1;
@@ -257,12 +241,24 @@ unsigned int SerialProcessing::SendDataToDevice(SerialCommand *sCommand)
 		//serialPortExpander.channel
 		_serialPortExpander.ProcessSerialExpander(sCommand);
 	}
-
+	if (sCommand->hardwareType == hardwareType.internal)
+	{
+		SendToPC(sCommand);
+	}
 	return 1;
 }
 
 unsigned int SerialProcessing::SendToPC(SerialCommand *sCommand)
 {
+	if (strcmp(sCommand->command, "FilamentLength") == 0)
+	{
+		if (sCommand->value != "" || sCommand->value != NULL)
+		{
+			FILAMENTLENGTH = atof(sCommand->value);
+		}
+		
+	}
+
 	char serialOutputBuffer[MAX_CMD_LENGTH] = {0};
 	BuildSerialOutput(sCommand, serialOutputBuffer);
 	SerialNative.println(serialOutputBuffer);
@@ -296,6 +292,12 @@ void SerialProcessing::CheckInteralCommands(SerialCommand *sCommand)
 	{
 		SIMULATIONACTIVE = strcmp(sCommand->value, "true") == 0;
 	}
+	if (strcmp(sCommand->command, "Handshake") == 0)
+	{
+		HANDSHAKE = true;
+	}
+	
+
 }
 
 

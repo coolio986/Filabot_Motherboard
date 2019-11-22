@@ -18,6 +18,7 @@
 #define START_PB		47
 #define STOP_PB			49
 
+
 #define MYHARDWARETYPE INTERNALDEVICE
 
 #define MAX_CMD_LENGTH 63
@@ -25,6 +26,11 @@
 
 extern bool SIMULATIONACTIVE;
 extern _SerialNative SerialNative;
+extern uint32_t SPOOLWEIGHT;
+extern float FILAMENTLENGTH;
+extern float FILAMENTDIAMETER;
+extern float FILAMENTDENSITY;
+extern volatile bool HANDSHAKE;
 
 #endif//__BOARD_H__
 
