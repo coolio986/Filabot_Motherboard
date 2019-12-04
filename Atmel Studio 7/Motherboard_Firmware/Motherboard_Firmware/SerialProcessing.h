@@ -45,6 +45,7 @@ class SerialProcessing {
 	unsigned int SendToPC(SerialCommand *sCommand);
 	//bool commandActive = false;  //primitive lock for serial processing to expander
 	void str_replace(char src[MAX_CMD_LENGTH], char *oldchars, char *newchars);
+	void ProcessFilamentCaptureState(SerialCommand *sCommand);
 
 };
 

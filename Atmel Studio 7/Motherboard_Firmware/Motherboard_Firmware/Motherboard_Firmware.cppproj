@@ -969,6 +969,12 @@
     <Compile Include="include\WString.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="NVM_Operations.cpp">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="NVM_Operations.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="Screen.cpp">
       <SubType>compile</SubType>
     </Compile>

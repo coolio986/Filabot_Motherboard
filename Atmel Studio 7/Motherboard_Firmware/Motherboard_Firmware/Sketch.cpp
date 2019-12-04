@@ -24,7 +24,8 @@
 #include <Encoder.h>
 #include <Wire.h>
 #include <Adafruit_ADS1015.h>
-#include "DueFlashStorage.h"
+#include "NVM_Operations.h"
+
 // ***** INCLUDES ***** //
 
 // ***** FreeRTOS  ***** //
@@ -43,7 +44,7 @@
 #define TASKGETTRAVERSEDATA
 #define TASKCHECKENCODER
 #define TASKGETFULLUPDATE
-#define TASKFILAMENTCAPTURE
+//#define TASKFILAMENTCAPTURE
 #define TASKCALCULATE
 #define TASKHANDSHAKE
 // ***** TASKS **** //
@@ -85,8 +86,9 @@ _SerialNative SerialNative;
 uint32_t SPOOLWEIGHT = 0;
 float FILAMENTLENGTH = 0.0;
 float FILAMENTDIAMETER = 0.0;
-float FILAMENTDENSITY = 0.0;
+float SPECIFICGRAVITY = 0.0;
 volatile bool HANDSHAKE = false;
+
 
 
 // ***** CLASS DECLARATIONs **** //
@@ -95,7 +97,8 @@ SpcProcessing spcProcessing;
 SerialProcessing serialProcessing;
 SemaphoreHandle_t xSemaphore = NULL;
 Adafruit_ADS1115 ads;  /* Use this for the 16-bit version */
-DueFlashStorage dueFlashStorage;
+NVM_Operations nvm_operations;
+
 #ifdef TASKCHECKENCODER
 Encoder encoder(ENCODER_PINA, ENCODER_PINB);
 #endif
@@ -111,6 +114,10 @@ unsigned int pullerDataCounter = 0;
 bool previousCaptureState = false;
 
 
+float previousLength = 0;
+float spoolWeight = 0.0;
+
+
 void setup()
 {
 	SerialNative.begin(SERIAL_BAUD); //using native serial rather than programming port on DUE
@@ -123,13 +130,12 @@ void setup()
 	pinMode(START_PB, INPUT_PULLUP);
 	pinMode(STOP_PB, INPUT_PULLUP);
 
-	//}
-	//SerialUSB.begin(SERIAL_BAUD); //using native serial rather than programming port on DUE
-	//Serial3.begin(SERIAL_BAUD); //Serial 3 for communication with external screen ILI9341
 	
+
+
 	// **** INITS ***** //
+	nvm_operations.init();
 	spcProcessing.init();
-	//screen.init();
 	serialProcessing.init();
 	startErrorHandler();
 	// **** INITS ***** //
@@ -345,10 +351,10 @@ void TaskGetPullerData(void *pvParameters)  // This is a task.
 					break;
 				}
 				
-				serialProcessing.SendDataToDevice(&command);
-				//vTaskDelay(10);
-				//delay(50);
-				//serialProcessing.CheckSerial(&Serial1, serialCommand.hardwareType);
+				if (!serialProcessing.FullUpdateRequested && command.hardwareType != NULL)
+				{
+					serialProcessing.SendDataToDevice(&command);
+				}
 			}
 
 			xSemaphoreGive(xSemaphore);
@@ -391,10 +397,12 @@ void TaskGetTraverseData(void *pvParameters)  // This is a task.
 					traverseDataCounter = 0;
 					break;
 				}
-
-				if (!serialProcessing.FullUpdateRequested){
+				if (!serialProcessing.FullUpdateRequested && command.hardwareType != NULL)
+				{
 					serialProcessing.SendDataToDevice(&command);
 				}
+				
+				
 			}
 			//vTaskDelay(10);
 			xSemaphoreGive(xSemaphore);
@@ -442,16 +450,17 @@ void TaskCheckEncoder(void *pvParameters)  // This is a task.
 				
 				sCommand.value = value;
 				
-				
-				serialProcessing.SendDataToDevice(&sCommand);
-				
+				if (!serialProcessing.FullUpdateRequested && sCommand.hardwareType != NULL)
+				{
+					serialProcessing.SendDataToDevice(&sCommand);
+				}
 				previousEncoderValue = encoderValue;
 			}
 			
 			#endif
 
 			xSemaphoreGive(xSemaphore);
-			vTaskDelayUntil( &xLastWakeTime, 50);
+			vTaskDelayUntil( &xLastWakeTime, 20);
 		}
 
 		
@@ -472,7 +481,6 @@ void TaskGetFullUpdate(void *pvParameters)  // This is a task.
 				if (serialProcessing.FullUpdateRequested)
 				{
 					SerialCommand command = {0};
-					
 					switch(fullUpdateCounter)
 					{
 						
@@ -511,6 +519,14 @@ void TaskGetFullUpdate(void *pvParameters)  // This is a task.
 						fullUpdateCounter++;
 						break;
 
+						case 5:
+						command.command = "SpecificGravity";
+						command.hardwareType = hardwareType.internal;
+						command.value = nvm_operations.GetSpecificGravity();
+						serialProcessing.SendDataToDevice(&command);
+						fullUpdateCounter++;
+						break;
+
 						default:
 						fullUpdateCounter = 0;
 						serialProcessing.FullUpdateRequested = false;
@@ -521,7 +537,7 @@ void TaskGetFullUpdate(void *pvParameters)  // This is a task.
 			}
 			
 			xSemaphoreGive(xSemaphore);
-			vTaskDelayUntil( &xLastWakeTime, 50);
+			vTaskDelayUntil( &xLastWakeTime, 60);
 		}
 
 		
@@ -537,21 +553,26 @@ void TaskFilamentCapture(void *pvParameters)  // This is a task.
 		{
 			TickType_t xLastWakeTime;
 			xLastWakeTime = xTaskGetTickCount();
-			if (HANDSHAKE){
+			if (HANDSHAKE)
+			{
 				if (previousCaptureState != serialProcessing.FilamentCapture )
 				{
+					
+
 					char value[MAX_CMD_LENGTH] = {0};
 					CONVERT_NUMBER_TO_STRING(STRING_FORMAT, serialProcessing.FilamentCapture == true ? "1" : "0", value);
 					SerialCommand command = {0};
 					command.command = "FilamentCapture";
 					command.hardwareType = hardwareType.traverse;
 					command.value = value;
-					serialProcessing.SendDataToDevice(&command);
 
-					
-					command.hardwareType = hardwareType.puller;
-					serialProcessing.SendDataToDevice(&command);
-
+					if (!serialProcessing.FullUpdateRequested && command.hardwareType != NULL)
+					{
+						serialProcessing.SendDataToDevice(&command);
+						command.hardwareType = hardwareType.puller;
+						delay(10);
+						serialProcessing.SendDataToDevice(&command);
+					}
 					previousCaptureState = serialProcessing.FilamentCapture;
 				}
 			}
@@ -576,26 +597,46 @@ void TaskCalculate(void *pvParameters)  // This is a task.
 
 			if (serialProcessing.FilamentCapture )
 			{
-				//SPOOLWEIGHT
-				SPOOLWEIGHT = (PI * pow(FILAMENTDIAMETER, 2) * FILAMENTLENGTH) * FILAMENTDENSITY;
+				
 
+				
+
+
+
+				//SPOOLWEIGHT
+				if (FILAMENTLENGTH != previousLength)
+				{
+				if (spoolWeight < 0) {spoolWeight = 0.0;}
+					spoolWeight = spoolWeight + (float)((float)(HALF_PI / 2) * pow(FILAMENTDIAMETER, 2) * (FILAMENTLENGTH - previousLength)) * (float)SPECIFICGRAVITY;
+					previousLength = FILAMENTLENGTH;
+				}
+				
+
+				SPOOLWEIGHT = uint32_t(spoolWeight);
 				char value[MAX_CMD_LENGTH] = {0};
+				CONVERT_NUMBER_TO_STRING(INT_FORMAT, SPOOLWEIGHT, value);
 				
 				SerialCommand command = {0};
 				command.command = "SpoolWeight";
 				command.hardwareType = hardwareType.internal;
 				command.value = value;
-				serialProcessing.SendDataToDevice(&command);
 
-				
-				command.hardwareType = hardwareType.puller;
-				serialProcessing.SendDataToDevice(&command);
-
+				if (!serialProcessing.FullUpdateRequested && command.hardwareType != NULL)
+				{
+					serialProcessing.SendDataToDevice(&command);
+					//command.hardwareType = hardwareType.puller;
+					//serialProcessing.SendDataToDevice(&command);
+				}
 				previousCaptureState = serialProcessing.FilamentCapture;
+				
+			}
+			else
+			{
+				spoolWeight = 0;
 			}
 			
 			xSemaphoreGive(xSemaphore);
-			vTaskDelayUntil( &xLastWakeTime, 50);
+			vTaskDelayUntil( &xLastWakeTime, 250);
 		}
 
 		

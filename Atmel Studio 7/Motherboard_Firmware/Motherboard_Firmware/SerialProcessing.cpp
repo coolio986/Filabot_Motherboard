@@ -7,6 +7,7 @@
 #include "Structs.h"
 #include "SerialPortExpander.h"
 #include "SerialNative.h"
+#include "NVM_Operations.h"
 
 
 
@@ -14,6 +15,7 @@ template<size_t SIZE, class T> inline size_t array_size(T (&arr)[SIZE]);
 
 SerialProcessing *SerialProcessing::firstInstance;
 SerialPortExpander _serialPortExpander;
+
 
 //bool SIMULATIONMODE; //sets default value for simulation
 
@@ -35,11 +37,11 @@ void SerialProcessing::Poll(void)
 
 	//if (!commandActive)
 	//{
-		CheckSerial(&SerialNative, 0); //check for new data coming from PC
+	CheckSerial(&SerialNative, 0); //check for new data coming from PC
 	//}
 	//if (!commandActive)
 	//{
-		CheckSerial(&Serial1, 1); //check for new data coming from expander
+	CheckSerial(&Serial1, 1); //check for new data coming from expander
 	//}
 	
 
@@ -134,17 +136,10 @@ unsigned int SerialProcessing::CheckSerial(HardwareSerial *port, int portNumber)
 			computerdata[i++] = port->read();
 			if (i > MAX_CMD_LENGTH){break;}
 		}
-		for (int j = 8; j < MAX_CMD_LENGTH; j++)
-		{
-			if (computerdata[j] == 51)
-			{
-				int sdf = 79235;
-				sdf = 123;
-			}
-		}
+		
 	}
 
-		if (i != 0) { 
+	if (i != 0) {
 		CommandParse(&sCommand, computerdata);
 		
 		computer_bytes_received = 0;                  //Reset the var computer_bytes_received to equal 0
@@ -193,7 +188,7 @@ unsigned int SerialProcessing::CommandParse(SerialCommand *sCommand, char str[MA
 		//Serial.println(hardwareType[i]);
 		if (!isdigit(hardwareID[i]) != 0)
 		{
-			SerialNative.println("Invalid Hardware ID, number is not a digit");
+			SerialNative.println("100;Invalid Hardware ID, number is not a digit");
 			return 0;
 		}
 	}
@@ -204,7 +199,7 @@ unsigned int SerialProcessing::CommandParse(SerialCommand *sCommand, char str[MA
 
 	//char output[MAX_CMD_LENGTH] = {0};
 	//BuildSerialOutput(sCommand, output);
-//
+	//
 	//SerialNative.println(output);
 
 	
@@ -215,14 +210,7 @@ unsigned int SerialProcessing::ProcessDataFromPC(SerialCommand *sCommand)
 {
 	//int cmp = strcmp(sCommand->command, "GetFullUpdate");
 
-	if ( strcmp(sCommand->command, "GetFullUpdate") == 0 && sCommand->hardwareType == hardwareType.internal)
-	{
-		FullUpdateRequested = true;
-	}
-	if ( strcmp(sCommand->command, "FilamentCapture") == 0 && sCommand->hardwareType == hardwareType.internal)
-	{
-		FilamentCapture = strcmp(sCommand->value, "1") == 0 ? true : false;
-	}
+	
 	if(sCommand->hardwareType == hardwareType.internal)
 	{
 		this->CheckInteralCommands(sCommand);
@@ -287,23 +275,78 @@ unsigned int SerialProcessing::SendScreenData(SerialCommand *sCommand)
 
 void SerialProcessing::CheckInteralCommands(SerialCommand *sCommand)
 {
-	//Serial.println("sim mode routine");
-	if (strcmp(sCommand->command, "IsInSimulationMode") == 0)
+	if ( strcmp(sCommand->command, "SpecificGravity") == 0)
 	{
-		SIMULATIONACTIVE = strcmp(sCommand->value, "true") == 0;
+		SPECIFICGRAVITY = atof(sCommand->value);
+		nvm_operations.SetSpecificGravity(SPECIFICGRAVITY);
+	}
+	if ( strcmp(sCommand->command, "GetFullUpdate") == 0)
+	{
+		FullUpdateRequested = true;
+	}
+	if ( strcmp(sCommand->command, "FilamentCapture") == 0)
+	{
+		ProcessFilamentCaptureState(sCommand);
 	}
 	if (strcmp(sCommand->command, "Handshake") == 0)
 	{
 		HANDSHAKE = true;
 	}
+	if (strcmp(sCommand->command, "IsInSimulationMode") == 0)
+	{
+		SIMULATIONACTIVE = strcmp(sCommand->value, "true") == 0;
+	}
 	
 
 }
 
+void SerialProcessing::ProcessFilamentCaptureState(SerialCommand *sCommand)
+{
+	if (sCommand->value != NULL)
+	{
+		static bool previousCaptureState = false;
+
+		FilamentCapture = strcmp(sCommand->value, "1") == 0 ? true : false;
+
+		if (HANDSHAKE)
+		{
+			if (previousCaptureState != FilamentCapture )
+			{
+				
+				char value[MAX_CMD_LENGTH] = {0};
+				CONVERT_NUMBER_TO_STRING(STRING_FORMAT, FilamentCapture == true ? "1" : "0", value);
+				SerialCommand command = {0};
+				command.command = "FilamentCapture";
+				command.hardwareType = hardwareType.traverse;
+				command.value = value;
+
+				if (!FullUpdateRequested && command.hardwareType != NULL)
+				{
+					SendDataToDevice(&command);
+					command.hardwareType = hardwareType.puller;
+					SendDataToDevice(&command);
+				}
+				previousCaptureState = FilamentCapture;
+			}
+		}
+	}
+	else
+	{
+		SerialCommand command = {0};
+		command.command = sCommand->command;
+		command.hardwareType = sCommand->hardwareType;
+		char value[MAX_CMD_LENGTH] = {0};
+		CONVERT_NUMBER_TO_STRING(INT_FORMAT, FilamentCapture == true ? 1 : 0, value);
+		command.value = value;
+		SendToPC(&command);
+	}
+
+	
+}
+
+
 
 void SerialProcessing::str_replace(char src[MAX_CMD_LENGTH], char *oldchars, char *newchars) { // utility string function
-	
-	
 
 	char *p = strstr(src, oldchars);
 	char buf[MAX_CMD_LENGTH] = {"\0"};
@@ -335,10 +378,6 @@ void BuildSerialOutput(SerialCommand *sCommand, char *outputBuffer)
 	sprintf(outputBuffer, OUTPUT_STRING_DSS, sCommand->hardwareType, sCommand->command, sCommand->value);
 }
 
-//template<size_t SIZE, class T> inline size_t array_size(T (&arr)[SIZE]) {
-//return SIZE;
-//}
-
 void PrintRandomRPMData()
 {
 	long rpm = random(10, 15);
@@ -348,13 +387,6 @@ void PrintRandomRPMData()
 	//SerialNative.print(rpm);
 	//SerialNative.println(";");
 }
-
-//bool startsWith(const char *pre, const char *str)
-//{
-//size_t lenpre = strlen(pre),
-//lenstr = strlen(str);
-//return lenstr < lenpre ? false : strncmp(pre, str, lenpre) == 0;
-//}
 
 // default destructor
 SerialProcessing::~SerialProcessing()

@@ -38,7 +38,18 @@ typedef struct
 	char *RPM;
 } Puller;
 
+typedef struct  
+{
+	__attribute__((__aligned__(8))) float NominalDiameter;
+	__attribute__((__aligned__(8))) float UpperLimit;
+	__attribute__((__aligned__(8))) float LowerLimit;
+	__attribute__((__aligned__(8))) float SpecificGravity;
+	__attribute__((__aligned__(8))) uint32_t SpoolWeight;
+	__attribute__((__aligned__(8))) float TraverseInnerOffset;
+	__attribute__((__aligned__(8))) uint32_t SpoolWidth;
+	__attribute__((__aligned__(8))) byte TravereStart;
 
+} _NVM_Storage;
 
 
 #endif /* STRUCTS_H_ */

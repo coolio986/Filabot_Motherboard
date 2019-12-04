@@ -4,6 +4,8 @@
 #include <Arduino.h>
 #include "HardwareTypes.h"
 #include "SerialNative.h"
+#include "Structs.h"
+#include "NVM_Operations.h"
 
 #define SERIAL_BAUD (115200) //baud rate for the serial ports
 
@@ -29,8 +31,10 @@ extern _SerialNative SerialNative;
 extern uint32_t SPOOLWEIGHT;
 extern float FILAMENTLENGTH;
 extern float FILAMENTDIAMETER;
-extern float FILAMENTDENSITY;
+extern float SPECIFICGRAVITY;
 extern volatile bool HANDSHAKE;
+
+extern NVM_Operations nvm_operations;
 
 #endif//__BOARD_H__
 
